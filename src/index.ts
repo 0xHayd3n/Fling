@@ -1,8 +1,29 @@
 #!/usr/bin/env node
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
 import { AdbError } from "./adb.js";
 import { formatDevicesSummary, listDevices } from "./devices.js";
+
+const deviceShape = z.object({
+  serial: z.string(),
+  state: z.enum([
+    "device",
+    "unauthorized",
+    "offline",
+    "no permissions",
+    "recovery",
+    "sideload",
+    "bootloader",
+    "unknown",
+  ]),
+  product: z.string().optional(),
+  model: z.string().optional(),
+  device: z.string().optional(),
+  transportId: z.string().optional(),
+  usb: z.string().optional(),
+  raw: z.string(),
+});
 
 const SERVER_NAME = "fling";
 const SERVER_VERSION = "0.1.0";
@@ -35,6 +56,10 @@ async function main() {
         "(device / unauthorized / offline / etc). Use this first to confirm a phone " +
         "is reachable before any other operation.",
       inputSchema: {},
+      outputSchema: {
+        devices: z.array(deviceShape),
+        count: z.number().int().nonnegative(),
+      },
       annotations: {
         readOnlyHint: true,
         openWorldHint: false,

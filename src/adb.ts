@@ -74,7 +74,7 @@ export async function runAdb(
       throw new AdbError("ADB_NOT_FOUND", ADB_INSTALL_HINT);
     }
 
-    if (e.killed && e.signal === "SIGTERM") {
+    if (e.killed) {
       throw new AdbError(
         "ADB_TIMEOUT",
         `adb ${args.join(" ")} timed out after ${timeoutMs}ms`,
