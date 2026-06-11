@@ -93,6 +93,21 @@ export async function runAdbBinary(
     let timedOut = false;
     let overBuffer = false;
 
+    // ENOENT fires both 'error' and 'close' on Node; without this guard we'd
+    // try to reject twice. The second reject is a no-op on the Promise but
+    // still constructs a stray FlingError that some monitors flag.
+    let settled = false;
+    const safeResolve = (v: AdbBinaryResult) => {
+      if (settled) return;
+      settled = true;
+      resolve(v);
+    };
+    const safeReject = (e: unknown) => {
+      if (settled) return;
+      settled = true;
+      reject(e);
+    };
+
     const timer = setTimeout(() => {
       timedOut = true;
       child.kill();
@@ -117,9 +132,9 @@ export async function runAdbBinary(
       clearTimeout(timer);
       const e = err as NodeJS.ErrnoException;
       if (e.code === "ENOENT") {
-        reject(new FlingError("ADB_NOT_FOUND", ADB_INSTALL_HINT));
+        safeReject(new FlingError("ADB_NOT_FOUND", ADB_INSTALL_HINT));
       } else {
-        reject(
+        safeReject(
           new FlingError(
             "ADB_FAILED",
             `adb ${args.join(" ")} failed: ${err.message}`
@@ -131,7 +146,7 @@ export async function runAdbBinary(
     child.on("close", (code) => {
       clearTimeout(timer);
       if (timedOut) {
-        reject(
+        safeReject(
           new FlingError(
             "ADB_TIMEOUT",
             `adb ${args.join(" ")} timed out after ${timeoutMs}ms`,
@@ -141,7 +156,7 @@ export async function runAdbBinary(
         return;
       }
       if (overBuffer) {
-        reject(
+        safeReject(
           new FlingError(
             "ADB_FAILED",
             `adb ${args.join(" ")} exceeded the binary buffer cap of ${maxBuffer} bytes.`
@@ -150,7 +165,7 @@ export async function runAdbBinary(
         return;
       }
       if (code !== 0) {
-        reject(
+        safeReject(
           new FlingError(
             "ADB_FAILED",
             `adb ${args.join(" ")} failed (exit ${code}): ${stderrText.trim() || "unknown error"}`,
@@ -159,7 +174,7 @@ export async function runAdbBinary(
         );
         return;
       }
-      resolve({ stdout: Buffer.concat(stdoutChunks), stderr: stderrText });
+      safeResolve({ stdout: Buffer.concat(stdoutChunks), stderr: stderrText });
     });
   });
 }

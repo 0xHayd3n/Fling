@@ -56,7 +56,11 @@ export function registerStopApp(server: McpServer): void {
         const { args: deviceArgs, serial } = await resolveDeviceArgs(device_id);
         await runAdb([...deviceArgs, "shell", "am", "force-stop", pkg]);
 
-        const text = `Force-stopped ${pkg} on ${serial}.`;
+        // `am force-stop` exits 0 and prints nothing whether the app was
+        // running, stopped, or never installed. The success message reflects
+        // that — we sent the signal; we can't claim a process was actually
+        // killed without a separate `pidof` check.
+        const text = `Force-stop signal sent to ${pkg} on ${serial} (no-op if the app wasn't running or isn't installed).`;
         return {
           content: [{ type: "text" as const, text }],
           structuredContent: { device_id: serial, package_name: pkg, message: text },

@@ -81,7 +81,13 @@ export function registerUninstallApp(server: McpServer): void {
           };
         }
 
-        const alreadyAbsent = /DELETE_FAILED_INTERNAL_ERROR|Unknown package|not installed/i.test(combined);
+        // Modern adb (Android 9+) returns "Failure [DELETE_FAILED_INTERNAL_ERROR]"
+        // when the package isn't installed. Older clients used "Unknown package".
+        // The verbose API 30+ exception form catches future variants.
+        const alreadyAbsent =
+          /DELETE_FAILED_INTERNAL_ERROR|Unknown package|Exception occurred while executing 'uninstall'/i.test(
+            combined
+          );
         const text = alreadyAbsent
           ? `${pkg} was not installed on ${serial} — nothing to uninstall.`
           : `Uninstall failed on ${serial}: ${combined.trim()}`;

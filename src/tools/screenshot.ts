@@ -1,5 +1,5 @@
 import { writeFile } from "node:fs/promises";
-import { resolve as resolvePath } from "node:path";
+import { resolve as resolvePath, sep } from "node:path";
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { runAdbBinary } from "../adb.js";
@@ -65,7 +65,21 @@ export function registerScreenshot(server: McpServer): void {
 
         let savedTo: string | undefined;
         if (save_to) {
-          savedTo = resolvePath(save_to);
+          // Constrain save_to to the server's cwd to prevent path-traversal
+          // primitives. A malicious or compromised assistant could otherwise
+          // pass `../../.ssh/authorized_keys` and overwrite arbitrary files.
+          // Users who genuinely want to write elsewhere can run the MCP server
+          // from that directory.
+          const cwd = process.cwd();
+          const resolved = resolvePath(cwd, save_to);
+          const cwdWithSep = cwd.endsWith(sep) ? cwd : cwd + sep;
+          if (resolved !== cwd && !resolved.startsWith(cwdWithSep)) {
+            throw new FlingError(
+              "INVALID_INPUT",
+              `save_to "${save_to}" resolves to ${resolved}, which is outside the server's cwd (${cwd}).`
+            );
+          }
+          savedTo = resolved;
           await writeFile(savedTo, stdout);
         }
 
