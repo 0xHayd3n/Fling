@@ -1,10 +1,9 @@
-import { stat } from "node:fs/promises";
-import { resolve as resolvePath } from "node:path";
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { runAdb } from "../adb.js";
+import { loadFlingConfig, resolveBuildCwd } from "../config.js";
+import { resolveApk } from "../apkResolver.js";
 import { resolveDeviceArgs } from "../devices.js";
-import { FlingError } from "../errors.js";
 import { deviceIdInput } from "../schemas.js";
 import { toolErrorFrom } from "../toolResult.js";
 
@@ -33,12 +32,6 @@ const INSTALL_FAILURE_HINTS: Record<string, string> = {
     "Installation was blocked by the user or a device policy.",
 };
 
-/**
- * Pull the failure code (e.g. INSTALL_FAILED_UPDATE_INCOMPATIBLE) and a
- * short raw excerpt from `adb install` output. Handles both the legacy
- * `Failure [CODE: reason]` shape and the API 30+ shape where the code
- * appears on a separate line below `adb: failed to install ...:`.
- */
 function extractInstallFailure(stdout: string, stderr: string): { code?: string; raw: string } {
   const haystack = `${stdout}\n${stderr}`.trim();
   const codeMatch = haystack.match(/INSTALL_(?:FAILED|PARSE_FAILED)_[A-Z_]+/);
@@ -55,6 +48,45 @@ function extractInstallFailure(stdout: string, stderr: string): { code?: string;
   return { code: codeMatch?.[0], raw };
 }
 
+export interface PerformInstallParams {
+  apkPath: string;
+  deviceArgs: string[];
+  reinstall: boolean;
+  grantRuntimePermissions: boolean;
+}
+
+export interface InstallResult {
+  success: boolean;
+  failureCode?: string;
+  rawFailure?: string;
+  message: string;
+}
+
+/**
+ * Run `adb install` and parse the result. Caller is responsible for verifying
+ * the apk exists and resolving device args.
+ */
+export async function performInstall(params: PerformInstallParams): Promise<InstallResult> {
+  const installArgs = ["install"];
+  if (params.reinstall) installArgs.push("-r");
+  if (params.grantRuntimePermissions) installArgs.push("-g");
+  installArgs.push(params.apkPath);
+
+  const { stdout, stderr } = await runAdb([...params.deviceArgs, ...installArgs], {
+    timeoutMs: INSTALL_TIMEOUT_MS,
+  });
+
+  const combined = `${stdout}\n${stderr}`;
+  if (/^Success\b/m.test(combined)) {
+    return { success: true, message: `Installed ${params.apkPath}` };
+  }
+
+  const { code, raw } = extractInstallFailure(stdout, stderr);
+  const hint = code ? INSTALL_FAILURE_HINTS[code] : undefined;
+  const message = `Install failed: ${raw}${hint ? `\n\n→ ${hint}` : ""}`;
+  return { success: false, failureCode: code, rawFailure: raw, message };
+}
+
 export function registerInstallApp(server: McpServer): void {
   server.registerTool(
     "install_app",
@@ -62,12 +94,14 @@ export function registerInstallApp(server: McpServer): void {
       title: "Install an APK on a device",
       description:
         "Push an .apk file to a connected Android device and install it via `adb install`. " +
-        "By default the install is a reinstall (-r) which preserves existing app data.",
+        "By default the install is a reinstall (-r) which preserves existing app data. " +
+        "When `apk_path` is omitted, Fling resolves it from fling.config.json (apkPath / apkGlob).",
       inputSchema: {
         apk_path: z
           .string()
           .min(1)
-          .describe("Path to the .apk file on the host machine. Absolute or relative to the server's cwd."),
+          .optional()
+          .describe("Path to the .apk file on the host machine. If omitted, falls back to fling.config.json."),
         device_id: deviceIdInput,
         reinstall: z
           .boolean()
@@ -77,10 +111,15 @@ export function registerInstallApp(server: McpServer): void {
           .boolean()
           .optional()
           .describe("Pass -g (grant all runtime permissions on install). Default false."),
+        cwd: z
+          .string()
+          .optional()
+          .describe("Starting directory for config lookup. Defaults to the MCP server's cwd."),
       },
       outputSchema: {
         device_id: z.string(),
         apk_path: z.string(),
+        apk_source: z.string(),
         success: z.boolean(),
         failure_code: z.string().optional(),
         message: z.string(),
@@ -92,65 +131,36 @@ export function registerInstallApp(server: McpServer): void {
         openWorldHint: false,
       },
     },
-    async ({ apk_path, device_id, reinstall, grant_runtime_permissions }) => {
+    async ({ apk_path, device_id, reinstall, grant_runtime_permissions, cwd }) => {
       try {
-        const absoluteApk = resolvePath(apk_path);
-        try {
-          const s = await stat(absoluteApk);
-          if (!s.isFile()) {
-            throw new FlingError(
-              "APK_NOT_FOUND",
-              `Path is not a regular file: ${absoluteApk}`
-            );
-          }
-        } catch (err) {
-          if (err instanceof FlingError) throw err;
-          throw new FlingError(
-            "APK_NOT_FOUND",
-            `APK not found at ${absoluteApk}. Pass an absolute path or one relative to the MCP server's cwd.`
-          );
-        }
+        const loaded = await loadFlingConfig(cwd ?? process.cwd());
+        const buildCwd = resolveBuildCwd(loaded);
+        const apk = await resolveApk(apk_path, loaded.config, buildCwd);
 
         const { args: deviceArgs, serial } = await resolveDeviceArgs(device_id);
 
-        const installArgs = ["install"];
-        if (reinstall !== false) installArgs.push("-r");
-        if (grant_runtime_permissions) installArgs.push("-g");
-        installArgs.push(absoluteApk);
-
-        const { stdout, stderr } = await runAdb([...deviceArgs, ...installArgs], {
-          timeoutMs: INSTALL_TIMEOUT_MS,
+        const result = await performInstall({
+          apkPath: apk.path,
+          deviceArgs,
+          reinstall: reinstall !== false,
+          grantRuntimePermissions: !!grant_runtime_permissions,
         });
 
-        const combined = `${stdout}\n${stderr}`;
-        if (/^Success\b/m.test(combined)) {
-          const text = `Installed ${absoluteApk} on ${serial}.`;
-          return {
-            content: [{ type: "text" as const, text }],
-            structuredContent: {
-              device_id: serial,
-              apk_path: absoluteApk,
-              success: true,
-              message: text,
-            },
-          };
-        }
+        const text = result.success
+          ? `Installed ${apk.path} on ${serial}. (apk source: ${apk.source})`
+          : `Install failed on ${serial}.\n\n${result.message}`;
 
-        const { code, raw } = extractInstallFailure(stdout, stderr);
-        const hint = code ? INSTALL_FAILURE_HINTS[code] : undefined;
-        const message =
-          `Install failed on ${serial}: ${raw}` +
-          (hint ? `\n\n→ ${hint}` : "");
         return {
-          content: [{ type: "text" as const, text: message }],
+          content: [{ type: "text" as const, text }],
           structuredContent: {
             device_id: serial,
-            apk_path: absoluteApk,
-            success: false,
-            failure_code: code,
-            message,
+            apk_path: apk.path,
+            apk_source: apk.source,
+            success: result.success,
+            failure_code: result.failureCode,
+            message: text,
           },
-          isError: true,
+          isError: !result.success,
         };
       } catch (err) {
         return toolErrorFrom(err);

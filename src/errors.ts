@@ -9,7 +9,11 @@ export type FlingErrorCode =
   | "INSTALL_FAILED"
   | "LAUNCH_FAILED"
   | "APP_NOT_RUNNING"
-  | "INVALID_INPUT";
+  | "INVALID_INPUT"
+  | "BUILD_TOOL_NOT_FOUND"
+  | "BUILD_TIMEOUT"
+  | "BUILD_FAILED"
+  | "CONFIG_MISSING";
 
 export class FlingError extends Error {
   readonly code: FlingErrorCode;

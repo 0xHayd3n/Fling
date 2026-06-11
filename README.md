@@ -10,19 +10,19 @@ Fling wraps `adb` (the Android Debug Bridge) behind the [Model Context Protocol]
 
 ## Status
 
-**Milestone 2 — Core loop:** MCP server exposes `list_devices`, `install_app`, `launch_app`, `read_logs`. See `PLAN.md` for the full roadmap.
+**Milestone 3 — Convenience:** MCP server exposes `list_devices`, `build_app`, `install_app`, `launch_app`, `read_logs`, `deploy_and_run`. Native Gradle build system is the first-class supported toolchain. See `PLAN.md` for the full roadmap.
 
 | Tool | Status |
 |---|---|
 | `list_devices` | ✅ Available |
+| `build_app` | ✅ Available (Gradle) |
 | `install_app` | ✅ Available |
 | `launch_app` | ✅ Available |
 | `read_logs` | ✅ Available |
+| `deploy_and_run` | ✅ Available |
 | `stop_app` | 🚧 Planned |
 | `uninstall_app` | 🚧 Planned |
 | `screenshot` | 🚧 Planned |
-| `build_app` | 🚧 Planned |
-| `deploy_and_run` | 🚧 Planned |
 
 ---
 
@@ -82,6 +82,37 @@ Restart the client. The `list_devices` tool should appear.
 
 ---
 
+## Project configuration
+
+Fling looks for project defaults so you don't have to pass `apk_path`, `package_name`, etc. on every call. It walks up from the MCP server's cwd looking for:
+
+1. **`fling.config.json`** in the project root, **or**
+2. a **`"fling": { ... }` key in `package.json`**.
+
+The first hit wins. All fields are optional — Fling has sensible defaults.
+
+```json
+{
+  "gradleTask": "assembleDebug",
+  "buildCwd": ".",
+  "apkPath": "app/build/outputs/apk/debug/app-debug.apk",
+  "apkGlob": "**/outputs/apk/**/*.apk",
+  "packageName": "com.example.app",
+  "mainActivity": ".MainActivity",
+  "buildCommand": null
+}
+```
+
+| Field | Default | Meaning |
+|---|---|---|
+| `gradleTask` | `assembleDebug` | Gradle task to run for `build_app` / `deploy_and_run`. |
+| `buildCwd` | config file directory | Where to look for `gradlew` and run the build. Relative paths resolve against the config dir. |
+| `apkPath` | — | Explicit APK to install. Wins over `apkGlob`. |
+| `apkGlob` | `**/outputs/apk/**/*.apk` | Pattern under `buildCwd`. The newest match by mtime wins. |
+| `packageName` | — | Default package for `launch_app` / `deploy_and_run`. |
+| `mainActivity` | — | Optional default activity. Leading dot = package-relative (`.MainActivity`). |
+| `buildCommand` | — | Escape hatch. Replaces gradle entirely. String (split on whitespace) or array. |
+
 ## Tools
 
 ### Device targeting
@@ -109,11 +140,19 @@ Show every Android device adb can see, including unauthorized and offline ones. 
 | `offline` | adb sees the device but it's not responding. |
 | `no permissions` | adb can't access USB (typically a Linux udev issue). |
 
+### `build_app`
+
+Run the project's build. By default invokes the Gradle wrapper (`./gradlew assembleDebug` or `gradlew.bat assembleDebug`) at the project root. Returns the discovered APK on success.
+
+**Inputs:** `cwd?` (where to start config lookup; defaults to the server's cwd).
+
+**Errors:** `BUILD_TOOL_NOT_FOUND` (no wrapper, no `gradle` on PATH), `BUILD_TIMEOUT` (default 10 min), `BUILD_FAILED` (with the extracted "What went wrong" block from gradle).
+
 ### `install_app`
 
 Push an APK to a device and install it (`adb install -r [-g]`). Reinstall by default (keeps app data).
 
-**Inputs:** `apk_path` (required), `device_id?`, `reinstall?` (default true), `grant_runtime_permissions?` (default false).
+**Inputs:** `apk_path?` (optional — falls back to `config.apkPath` or `config.apkGlob` auto-discovery), `device_id?`, `reinstall?` (default true), `grant_runtime_permissions?` (default false), `cwd?`.
 
 **On failure**, returns the parsed `INSTALL_FAILED_*` code plus an actionable hint — e.g. signing-mismatch suggests `uninstall_app` first, version-downgrade suggests bumping `versionCode`.
 
@@ -124,7 +163,7 @@ Start an installed app. Two modes:
 - **No activity given:** `adb shell monkey -p <pkg> -c LAUNCHER 1` — fires the default launcher intent.
 - **Activity given:** `adb shell am start -W -n <pkg>/<activity>` — wait-mode, returns launch timing.
 
-**Inputs:** `package_name` (required), `activity?`, `device_id?`.
+**Inputs:** `package_name?` (optional — falls back to `config.packageName`), `activity?` (falls back to `config.mainActivity`), `device_id?`, `cwd?`.
 
 Package and activity names are validated against Java identifier rules at the tool boundary.
 
@@ -135,6 +174,16 @@ Snapshot of `adb logcat -d` (dump-and-exit, no streaming). Returns the last N li
 **Inputs:** `package_name?` (resolves to PIDs via `pidof`), `tag?`, `priority?` (V/D/I/W/E/F), `lines?` (default 200, max 5000), `device_id?`.
 
 When `package_name` is given but the app isn't running, returns `success: false` and an empty `logs` string — not an error.
+
+### `deploy_and_run`
+
+The convenience tool: build → resolve APK → resolve device → install → launch, in one call. Stops at the first failed step and reports per-step timing.
+
+**Inputs:** all optional. `skip_build` reuses an existing APK; `apk_path`, `package_name`, `activity`, `device_id`, `reinstall`, `grant_runtime_permissions`, `cwd` all override their config / autodetect defaults.
+
+**Output**: `success`, `device_id`, `apk_path`, `package_name`, and `steps[]` — each step records `name`, `success`, `duration_ms`, `message`.
+
+This is what gets called when someone says *"run this on my phone."*
 
 ---
 

@@ -61,6 +61,21 @@ const requests = [
       arguments: { package_name: "not a valid package!" },
     },
   },
+  {
+    jsonrpc: "2.0",
+    id: 8,
+    method: "tools/call",
+    params: { name: "build_app", arguments: {} },
+  },
+  {
+    jsonrpc: "2.0",
+    id: 9,
+    method: "tools/call",
+    params: {
+      name: "deploy_and_run",
+      arguments: { package_name: "com.example.app", skip_build: true },
+    },
+  },
 ];
 
 const child = spawn(process.execPath, [serverEntry], {
@@ -87,7 +102,7 @@ for (const req of requests) {
 
 setTimeout(() => {
   child.stdin.end();
-}, 3000);
+}, 6000);
 
 const SHOW_FULL = process.argv.includes("--full");
 
