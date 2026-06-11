@@ -32,7 +32,7 @@ const INSTALL_FAILURE_HINTS: Record<string, string> = {
     "Installation was blocked by the user or a device policy.",
 };
 
-function extractInstallFailure(stdout: string, stderr: string): { code?: string; raw: string } {
+export function extractInstallFailure(stdout: string, stderr: string): { code?: string; raw: string } {
   const haystack = `${stdout}\n${stderr}`.trim();
   const codeMatch = haystack.match(/INSTALL_(?:FAILED|PARSE_FAILED)_[A-Z_]+/);
 

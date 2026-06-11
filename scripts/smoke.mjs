@@ -76,6 +76,30 @@ const requests = [
       arguments: { package_name: "com.example.app", skip_build: true },
     },
   },
+  {
+    jsonrpc: "2.0",
+    id: 10,
+    method: "tools/call",
+    params: {
+      name: "stop_app",
+      arguments: { package_name: "com.example.app" },
+    },
+  },
+  {
+    jsonrpc: "2.0",
+    id: 11,
+    method: "tools/call",
+    params: {
+      name: "uninstall_app",
+      arguments: { package_name: "com.example.app" },
+    },
+  },
+  {
+    jsonrpc: "2.0",
+    id: 12,
+    method: "tools/call",
+    params: { name: "screenshot", arguments: {} },
+  },
 ];
 
 const child = spawn(process.execPath, [serverEntry], {

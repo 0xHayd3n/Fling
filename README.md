@@ -10,7 +10,7 @@ Fling wraps `adb` (the Android Debug Bridge) behind the [Model Context Protocol]
 
 ## Status
 
-**Milestone 3 — Convenience:** MCP server exposes `list_devices`, `build_app`, `install_app`, `launch_app`, `read_logs`, `deploy_and_run`. Native Gradle build system is the first-class supported toolchain. See `PLAN.md` for the full roadmap.
+**Milestone 4 — Polish:** all nine Phase-1 tools shipped, unit-tested where parsing is involved. Native Gradle is the first-class build system. See `PLAN.md` for the full roadmap.
 
 | Tool | Status |
 |---|---|
@@ -18,11 +18,11 @@ Fling wraps `adb` (the Android Debug Bridge) behind the [Model Context Protocol]
 | `build_app` | ✅ Available (Gradle) |
 | `install_app` | ✅ Available |
 | `launch_app` | ✅ Available |
+| `stop_app` | ✅ Available |
+| `uninstall_app` | ✅ Available |
 | `read_logs` | ✅ Available |
+| `screenshot` | ✅ Available |
 | `deploy_and_run` | ✅ Available |
-| `stop_app` | 🚧 Planned |
-| `uninstall_app` | 🚧 Planned |
-| `screenshot` | 🚧 Planned |
 
 ---
 
@@ -175,6 +175,26 @@ Snapshot of `adb logcat -d` (dump-and-exit, no streaming). Returns the last N li
 
 When `package_name` is given but the app isn't running, returns `success: false` and an empty `logs` string — not an error.
 
+### `stop_app`
+
+Force-stop every process of the named app via `adb shell am force-stop`. Idempotent — calling on a stopped app is a no-op.
+
+**Inputs:** `package_name?` (falls back to config), `device_id?`, `cwd?`.
+
+### `uninstall_app`
+
+Remove an installed app via `adb uninstall`. Pass `keep_data: true` to keep the app's `/data` and `/cache` directories (adb's `-k`).
+
+**Inputs:** `package_name?`, `keep_data?`, `device_id?`, `cwd?`.
+
+If the app wasn't installed, returns `success: false` with `already_absent: true` and is NOT flagged as an error — uninstalling something that's already gone is fine.
+
+### `screenshot`
+
+Capture a PNG via `adb exec-out screencap -p`. Returns the image inline as MCP image content so the assistant can see it. Pass `save_to` to also write a copy to disk.
+
+**Inputs:** `device_id?`, `save_to?` (host path, relative to MCP server cwd).
+
 ### `deploy_and_run`
 
 The convenience tool: build → resolve APK → resolve device → install → launch, in one call. Stops at the first failed step and reports per-step timing.
@@ -196,10 +216,17 @@ npm install
 npm run build       # tsc → dist/
 npm run dev         # tsx src/index.ts
 npm start           # node dist/index.js
-node scripts/smoke.mjs  # JSON-RPC smoke test over stdio
+npm test            # build + node --test on the pure parsers
+npm run smoke       # JSON-RPC smoke test over stdio
 ```
 
-The smoke script drives the server end-to-end without an MCP client: it sends `initialize` → `tools/list` → exercises each tool's error path and prints a summary line per response. Pass `--full` to dump the full JSON-RPC responses instead.
+`npm test` runs unit tests for the pure parsing functions:
+- `parseDevicesOutput` — every documented `adb devices -l` state.
+- `globToRegex` — glob → regex conversion edge cases (top-level `**`, trailing `**`, escapes).
+- `extractInstallFailure` — both legacy `Failure [CODE]` and API 30+ multi-line formats.
+- `extractBuildFailureReason` — gradle `What went wrong` extraction with fallbacks.
+
+`npm run smoke` drives the server end-to-end without an MCP client: `initialize` → `tools/list` → exercises every tool's error path and prints a summary line per response. Pass `--full` for full JSON-RPC dumps.
 
 ---
 

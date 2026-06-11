@@ -7,9 +7,12 @@ import { registerInstallApp } from "./tools/install-app.js";
 import { registerLaunchApp } from "./tools/launch-app.js";
 import { registerListDevices } from "./tools/list-devices.js";
 import { registerReadLogs } from "./tools/read-logs.js";
+import { registerScreenshot } from "./tools/screenshot.js";
+import { registerStopApp } from "./tools/stop-app.js";
+import { registerUninstallApp } from "./tools/uninstall-app.js";
 
 const SERVER_NAME = "fling";
-const SERVER_VERSION = "0.3.0";
+const SERVER_VERSION = "0.4.0";
 
 async function main() {
   const server = new McpServer({
@@ -21,7 +24,10 @@ async function main() {
   registerBuildApp(server);
   registerInstallApp(server);
   registerLaunchApp(server);
+  registerStopApp(server);
+  registerUninstallApp(server);
   registerReadLogs(server);
+  registerScreenshot(server);
   registerDeployAndRun(server);
 
   const transport = new StdioServerTransport();
