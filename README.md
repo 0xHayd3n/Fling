@@ -10,16 +10,16 @@ Fling wraps `adb` (the Android Debug Bridge) behind the [Model Context Protocol]
 
 ## Status
 
-**Milestone 1 — Skeleton:** MCP server boots over stdio and exposes `list_devices`. See `PLAN.md` for the full roadmap.
+**Milestone 2 — Core loop:** MCP server exposes `list_devices`, `install_app`, `launch_app`, `read_logs`. See `PLAN.md` for the full roadmap.
 
 | Tool | Status |
 |---|---|
 | `list_devices` | ✅ Available |
-| `install_app` | 🚧 Planned |
-| `launch_app` | 🚧 Planned |
+| `install_app` | ✅ Available |
+| `launch_app` | ✅ Available |
+| `read_logs` | ✅ Available |
 | `stop_app` | 🚧 Planned |
 | `uninstall_app` | 🚧 Planned |
-| `read_logs` | 🚧 Planned |
 | `screenshot` | 🚧 Planned |
 | `build_app` | 🚧 Planned |
 | `deploy_and_run` | 🚧 Planned |
@@ -84,6 +84,16 @@ Restart the client. The `list_devices` tool should appear.
 
 ## Tools
 
+### Device targeting
+
+Every tool except `list_devices` accepts an optional `device_id`. Resolution priority:
+
+1. Explicit `device_id` argument.
+2. The `ANDROID_SERIAL` environment variable.
+3. Auto-pick the single ready (`state: "device"`) device.
+
+When 0 or 2+ ready devices exist and no explicit id is given, the tool returns a `NO_DEVICE`, `NO_READY_DEVICE`, or `MULTIPLE_DEVICES` error with guidance.
+
 ### `list_devices`
 
 Show every Android device adb can see, including unauthorized and offline ones. Returns both human-readable text and structured JSON (`devices[]`, `count`).
@@ -99,6 +109,33 @@ Show every Android device adb can see, including unauthorized and offline ones. 
 | `offline` | adb sees the device but it's not responding. |
 | `no permissions` | adb can't access USB (typically a Linux udev issue). |
 
+### `install_app`
+
+Push an APK to a device and install it (`adb install -r [-g]`). Reinstall by default (keeps app data).
+
+**Inputs:** `apk_path` (required), `device_id?`, `reinstall?` (default true), `grant_runtime_permissions?` (default false).
+
+**On failure**, returns the parsed `INSTALL_FAILED_*` code plus an actionable hint — e.g. signing-mismatch suggests `uninstall_app` first, version-downgrade suggests bumping `versionCode`.
+
+### `launch_app`
+
+Start an installed app. Two modes:
+
+- **No activity given:** `adb shell monkey -p <pkg> -c LAUNCHER 1` — fires the default launcher intent.
+- **Activity given:** `adb shell am start -W -n <pkg>/<activity>` — wait-mode, returns launch timing.
+
+**Inputs:** `package_name` (required), `activity?`, `device_id?`.
+
+Package and activity names are validated against Java identifier rules at the tool boundary.
+
+### `read_logs`
+
+Snapshot of `adb logcat -d` (dump-and-exit, no streaming). Returns the last N lines with optional filters.
+
+**Inputs:** `package_name?` (resolves to PIDs via `pidof`), `tag?`, `priority?` (V/D/I/W/E/F), `lines?` (default 200, max 5000), `device_id?`.
+
+When `package_name` is given but the app isn't running, returns `success: false` and an empty `logs` string — not an error.
+
 ---
 
 ## Development
@@ -113,7 +150,7 @@ npm start           # node dist/index.js
 node scripts/smoke.mjs  # JSON-RPC smoke test over stdio
 ```
 
-The smoke script drives the server end-to-end without an MCP client: it sends `initialize` → `tools/list` → `tools/call list_devices` and prints every response.
+The smoke script drives the server end-to-end without an MCP client: it sends `initialize` → `tools/list` → exercises each tool's error path and prints a summary line per response. Pass `--full` to dump the full JSON-RPC responses instead.
 
 ---
 

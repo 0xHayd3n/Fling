@@ -1,4 +1,5 @@
 import { runAdb } from "./adb.js";
+import { FlingError } from "./errors.js";
 
 export type DeviceState =
   | "device"
@@ -140,3 +141,51 @@ export function formatDevicesSummary(devices: Device[]): string {
 
   return lines.join("\n");
 }
+
+/**
+ * Resolve which `-s <id>` args to pass to adb.
+ *
+ * Priority: explicit deviceId → ANDROID_SERIAL env → auto-pick the single ready
+ * device. Throws FlingError when ambiguous or impossible.
+ */
+export async function resolveDeviceArgs(
+  deviceId?: string
+): Promise<{ args: string[]; serial: string }> {
+  if (deviceId) return { args: ["-s", deviceId], serial: deviceId };
+
+  const envSerial = process.env.ANDROID_SERIAL;
+  if (envSerial) return { args: ["-s", envSerial], serial: envSerial };
+
+  const devices = await listDevices();
+  const ready = devices.filter((d) => d.state === "device");
+
+  if (ready.length === 1) {
+    return { args: ["-s", ready[0].serial], serial: ready[0].serial };
+  }
+
+  if (ready.length === 0) {
+    if (devices.length === 0) {
+      throw new FlingError(
+        "NO_DEVICE",
+        "No Android devices detected. Plug in a phone with USB Debugging enabled, " +
+          "or run list_devices for the full checklist."
+      );
+    }
+    const states = devices.map((d) => `${d.serial} (${d.state})`).join(", ");
+    const hint = devices.some((d) => d.state === "unauthorized")
+      ? "Accept the RSA fingerprint prompt on the phone, then retry."
+      : "Run list_devices for per-device guidance.";
+    throw new FlingError(
+      "NO_READY_DEVICE",
+      `No devices are in the 'device' state: ${states}. ${hint}`
+    );
+  }
+
+  const serials = ready.map((d) => d.serial).join(", ");
+  throw new FlingError(
+    "MULTIPLE_DEVICES",
+    `${ready.length} devices ready (${serials}). Pass device_id to pick one, ` +
+      "or set the ANDROID_SERIAL environment variable."
+  );
+}
+

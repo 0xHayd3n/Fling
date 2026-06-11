@@ -1,45 +1,13 @@
 #!/usr/bin/env node
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { z } from "zod";
-import { AdbError } from "./adb.js";
-import { formatDevicesSummary, listDevices } from "./devices.js";
-
-const deviceShape = z.object({
-  serial: z.string(),
-  state: z.enum([
-    "device",
-    "unauthorized",
-    "offline",
-    "no permissions",
-    "recovery",
-    "sideload",
-    "bootloader",
-    "unknown",
-  ]),
-  product: z.string().optional(),
-  model: z.string().optional(),
-  device: z.string().optional(),
-  transportId: z.string().optional(),
-  usb: z.string().optional(),
-  raw: z.string(),
-});
+import { registerInstallApp } from "./tools/install-app.js";
+import { registerLaunchApp } from "./tools/launch-app.js";
+import { registerListDevices } from "./tools/list-devices.js";
+import { registerReadLogs } from "./tools/read-logs.js";
 
 const SERVER_NAME = "fling";
-const SERVER_VERSION = "0.1.0";
-
-function toolError(message: string) {
-  return {
-    isError: true as const,
-    content: [{ type: "text" as const, text: message }],
-  };
-}
-
-function describeAdbError(err: unknown): string {
-  if (err instanceof AdbError) return `${err.code}: ${err.message}`;
-  if (err instanceof Error) return err.message;
-  return String(err);
-}
+const SERVER_VERSION = "0.2.0";
 
 async function main() {
   const server = new McpServer({
@@ -47,37 +15,10 @@ async function main() {
     version: SERVER_VERSION,
   });
 
-  server.registerTool(
-    "list_devices",
-    {
-      title: "List Android devices",
-      description:
-        "Show every Android device adb can see (USB or wireless), with its state " +
-        "(device / unauthorized / offline / etc). Use this first to confirm a phone " +
-        "is reachable before any other operation.",
-      inputSchema: {},
-      outputSchema: {
-        devices: z.array(deviceShape),
-        count: z.number().int().nonnegative(),
-      },
-      annotations: {
-        readOnlyHint: true,
-        openWorldHint: false,
-      },
-    },
-    async () => {
-      try {
-        const devices = await listDevices();
-        const text = formatDevicesSummary(devices);
-        return {
-          content: [{ type: "text" as const, text }],
-          structuredContent: { devices, count: devices.length },
-        };
-      } catch (err) {
-        return toolError(describeAdbError(err));
-      }
-    }
-  );
+  registerListDevices(server);
+  registerInstallApp(server);
+  registerLaunchApp(server);
+  registerReadLogs(server);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);

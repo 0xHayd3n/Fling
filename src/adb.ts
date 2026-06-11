@@ -1,32 +1,8 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { FlingError } from "./errors.js";
 
 const execFileAsync = promisify(execFile);
-
-export type AdbErrorCode =
-  | "ADB_NOT_FOUND"
-  | "ADB_TIMEOUT"
-  | "ADB_FAILED";
-
-export class AdbError extends Error {
-  readonly code: AdbErrorCode;
-  readonly stderr?: string;
-  readonly stdout?: string;
-  readonly exitCode?: number;
-
-  constructor(
-    code: AdbErrorCode,
-    message: string,
-    extras: { stderr?: string; stdout?: string; exitCode?: number } = {}
-  ) {
-    super(message);
-    this.name = "AdbError";
-    this.code = code;
-    this.stderr = extras.stderr;
-    this.stdout = extras.stdout;
-    this.exitCode = extras.exitCode;
-  }
-}
 
 export interface RunAdbOptions {
   timeoutMs?: number;
@@ -71,11 +47,11 @@ export async function runAdb(
     };
 
     if (e.code === "ENOENT") {
-      throw new AdbError("ADB_NOT_FOUND", ADB_INSTALL_HINT);
+      throw new FlingError("ADB_NOT_FOUND", ADB_INSTALL_HINT);
     }
 
     if (e.killed) {
-      throw new AdbError(
+      throw new FlingError(
         "ADB_TIMEOUT",
         `adb ${args.join(" ")} timed out after ${timeoutMs}ms`,
         { stdout: e.stdout, stderr: e.stderr }
@@ -83,7 +59,7 @@ export async function runAdb(
     }
 
     const exitCode = typeof e.code === "number" ? e.code : undefined;
-    throw new AdbError(
+    throw new FlingError(
       "ADB_FAILED",
       `adb ${args.join(" ")} failed${exitCode !== undefined ? ` (exit ${exitCode})` : ""}: ${
         (e.stderr || e.message || "unknown error").trim()
