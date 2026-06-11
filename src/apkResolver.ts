@@ -31,7 +31,12 @@ export async function resolveApk(
   buildCwd: string
 ): Promise<ResolvedApk> {
   if (explicitPath) {
-    const abs = isAbsolute(explicitPath) ? explicitPath : resolvePath(explicitPath);
+    // Relative paths resolve against buildCwd, matching how config.apkPath
+    // resolves. The previous behavior used process.cwd() which surprised
+    // users who passed relative paths from inside a project directory.
+    const abs = isAbsolute(explicitPath)
+      ? explicitPath
+      : resolvePath(buildCwd, explicitPath);
     if (!(await fileExists(abs))) {
       throw new FlingError(
         "APK_NOT_FOUND",

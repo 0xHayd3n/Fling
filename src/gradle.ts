@@ -36,8 +36,15 @@ function splitBuildCommand(cmd: string | string[]): string[] {
 }
 
 /**
- * Wrap an invocation through cmd.exe so we can run .bat/.cmd safely on
- * Windows without enabling `shell: true` (which would be injectable).
+ * Wrap an invocation through cmd.exe so we can run .bat/.cmd on Windows
+ * without enabling `shell: true`. NOTE: cmd.exe still interprets `&`, `|`,
+ * `>`, `<`, `^`, and parens in its arguments, so this is only safe when
+ * the args are validated/trusted. The two callers that reach this:
+ *   - gradleTask, validated by TASK_NAME_RE.
+ *   - config.buildCommand, which is part of the user's own project config
+ *     and is treated as trusted (the threat model is the same as a shell
+ *     script committed to the repo).
+ * Future callers must enforce equivalent validation.
  */
 function wrapForWindowsBatch(command: string, args: string[]): { command: string; args: string[] } {
   return { command: "cmd.exe", args: ["/c", command, ...args] };

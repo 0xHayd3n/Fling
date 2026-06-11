@@ -13,7 +13,7 @@ export const DEFAULT_APK_GLOB = "**/outputs/apk/**/*.apk";
 
 /**
  * Convert a glob to a regex. Supports:
- *   `**` — any number of path segments (including zero)
+ *   `**` — any number of path segments (including zero, allowing top-level matches)
  *   `*`  — any chars except `/`
  *   `?`  — any single char except `/`
  * All other regex metacharacters are escaped.
@@ -24,9 +24,21 @@ export function globToRegex(pattern: string): RegExp {
   while (i < pattern.length) {
     const c = pattern[i];
     if (c === "*" && pattern[i + 1] === "*") {
-      re += ".*";
+      // `**` semantics depend on what follows:
+      //   - At end of pattern: match anything (including no slash) → `.*`
+      //   - Followed by `/`: zero-or-more path segments → `(.*/)?`,
+      //     so `**/*.apk` matches both `app.apk` and `nested/app.apk`.
+      //   - Followed by non-slash text: literal "any chars" → `.*`
       i += 2;
-      if (pattern[i] === "/") i++;
+      if (i >= pattern.length) {
+        re += ".*";
+      } else if (pattern[i] === "/") {
+        re += "(.*/)?";
+        i++;
+      } else {
+        re += ".*";
+      }
+      continue;
     } else if (c === "*") {
       re += "[^/]*";
       i++;
