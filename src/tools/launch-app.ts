@@ -35,7 +35,9 @@ export function registerLaunchApp(server: McpServer): void {
       description:
         "Start an installed app on the device. If `activity` is omitted, the default " +
         "launcher activity is started (via `monkey`). If `activity` is given, it is " +
-        "passed to `am start -n <package>/<activity>` directly.",
+        "passed to `am start -n <package>/<activity>` directly. " +
+        "Note: success means the launch intent was dispatched, not that the app is " +
+        "stable — an app that crashes immediately after onCreate still returns success.",
       inputSchema: {
         package_name: z
           .string()

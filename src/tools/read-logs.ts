@@ -30,12 +30,19 @@ function validateTag(tag: string): void {
   }
 }
 
+/**
+ * Resolve PIDs for a package via the device shell.
+ *
+ * Uses `pidof` (toybox, Android 6+/API 23+). On older devices pidof is
+ * absent and this returns []; callers will treat that as "app not running"
+ * which can be a false negative on pre-API-23 hardware.
+ */
 async function resolvePids(
   deviceArgs: string[],
   packageName: string
 ): Promise<string[]> {
   const { stdout } = await runAdb(
-    [...deviceArgs, "shell", `pidof ${packageName} || true`],
+    [...deviceArgs, "shell", `pidof ${packageName} 2>/dev/null || true`],
     { timeoutMs: 10_000 }
   );
   return stdout.trim().split(/\s+/).filter(Boolean);
@@ -81,7 +88,6 @@ export function registerReadLogs(server: McpServer): void {
         package_name: z.string().optional(),
         pids: z.array(z.string()).optional(),
         lines_returned: z.number().int().nonnegative(),
-        truncated: z.boolean(),
         logs: z.string(),
       },
       annotations: {
@@ -109,14 +115,18 @@ export function registerReadLogs(server: McpServer): void {
                 package_name,
                 pids: [],
                 lines_returned: 0,
-                truncated: false,
                 logs: "",
               },
             };
           }
         }
 
-        const logcatArgs = ["logcat", "-d", "-t", String(lineCount), "-v", "threadtime"];
+        // `-t N` implies a snapshot of the last N lines (it's a superset of `-d`).
+        // Passing both is redundant and adb already caps output at N, so
+        // truncation is not observable from this side.
+        // `--pid=` accepts a comma-separated list on API 28+. On older devices
+        // multi-PID filtering may be ignored; most apps run as a single process.
+        const logcatArgs = ["logcat", "-t", String(lineCount), "-v", "threadtime"];
         if (pids && pids.length > 0) {
           logcatArgs.push(`--pid=${pids.join(",")}`);
         }
@@ -131,12 +141,8 @@ export function registerReadLogs(server: McpServer): void {
           maxBufferBytes: LOGCAT_BUFFER_BYTES,
         });
 
-        const logsLines = stdout.split(/\r?\n/);
-        const truncated = logsLines.length > lineCount;
-        const finalLogs = truncated
-          ? logsLines.slice(-lineCount).join("\n")
-          : stdout;
-        const linesReturned = finalLogs ? finalLogs.split(/\r?\n/).filter(Boolean).length : 0;
+        const trimmed = stdout.replace(/\r?\n$/, "");
+        const linesReturned = trimmed.length === 0 ? 0 : trimmed.split(/\r?\n/).length;
 
         const header = [
           `Device: ${serial}`,
@@ -148,8 +154,8 @@ export function registerReadLogs(server: McpServer): void {
           .filter(Boolean)
           .join("  ·  ");
 
-        const text = finalLogs.trim().length > 0
-          ? `${header}\n\n${finalLogs}`
+        const text = linesReturned > 0
+          ? `${header}\n\n${trimmed}`
           : `${header}\n\n(no matching log entries)`;
 
         return {
@@ -159,8 +165,7 @@ export function registerReadLogs(server: McpServer): void {
             package_name,
             pids,
             lines_returned: linesReturned,
-            truncated,
-            logs: finalLogs,
+            logs: trimmed,
           },
         };
       } catch (err) {

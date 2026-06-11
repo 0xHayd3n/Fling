@@ -33,11 +33,25 @@ const INSTALL_FAILURE_HINTS: Record<string, string> = {
     "Installation was blocked by the user or a device policy.",
 };
 
+/**
+ * Pull the failure code (e.g. INSTALL_FAILED_UPDATE_INCOMPATIBLE) and a
+ * short raw excerpt from `adb install` output. Handles both the legacy
+ * `Failure [CODE: reason]` shape and the API 30+ shape where the code
+ * appears on a separate line below `adb: failed to install ...:`.
+ */
 function extractInstallFailure(stdout: string, stderr: string): { code?: string; raw: string } {
-  const haystack = `${stdout}\n${stderr}`;
-  const match = haystack.match(/(?:Failure|INSTALL_FAILED_[A-Z_]+|INSTALL_PARSE_FAILED_[A-Z_]+)[^\n]*/);
-  const raw = (match?.[0] ?? haystack.trim()).trim();
-  const codeMatch = raw.match(/INSTALL_(?:FAILED|PARSE_FAILED)_[A-Z_]+/);
+  const haystack = `${stdout}\n${stderr}`.trim();
+  const codeMatch = haystack.match(/INSTALL_(?:FAILED|PARSE_FAILED)_[A-Z_]+/);
+
+  const lines = haystack.split(/\r?\n/);
+  const markerIdx = lines.findIndex((l) =>
+    /adb: failed|^Failure\b|INSTALL_(?:FAILED|PARSE_FAILED)_/.test(l)
+  );
+  const raw =
+    markerIdx >= 0
+      ? lines.slice(markerIdx, markerIdx + 3).join("\n").trim()
+      : haystack;
+
   return { code: codeMatch?.[0], raw };
 }
 
