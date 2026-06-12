@@ -159,6 +159,55 @@ describe("AdbShell — exec happy path", () => {
   });
 });
 
+describe("AdbShell — timeout", () => {
+  it("rejects with ADB_TIMEOUT when no sentinel arrives in time", async () => {
+    const child = makeFakeChild();
+    const shell = new AdbShell("S", { spawnImpl: () => child });
+    await assert.rejects(
+      () => shell.exec("sleep 30", { timeoutMs: 30 }),
+      (err) => err.code === "ADB_TIMEOUT"
+    );
+  });
+
+  it("kills the child on timeout", async () => {
+    const child = makeFakeChild();
+    const shell = new AdbShell("S", { spawnImpl: () => child });
+    const stuck = shell.exec("sleep 30", { timeoutMs: 30 });
+    await assert.rejects(() => stuck, (err) => err.code === "ADB_TIMEOUT");
+    assert.equal(child.killed, true);
+  });
+
+  it("rejects queued calls with ADB_SHELL_RECYCLED on timeout", async () => {
+    const child = makeFakeChild();
+    const shell = new AdbShell("S", { spawnImpl: () => child });
+    const stuck = shell.exec("sleep 30", { timeoutMs: 30 });
+    const queued = shell.exec("ls");
+    await assert.rejects(() => stuck, (err) => err.code === "ADB_TIMEOUT");
+    await assert.rejects(() => queued, (err) => err.code === "ADB_SHELL_RECYCLED");
+  });
+
+  it("creates a fresh shell on the next call after a timeout", async () => {
+    let spawnCount = 0;
+    const shell = new AdbShell("S", {
+      spawnImpl: () => {
+        spawnCount++;
+        return makeFakeChild();
+      },
+    });
+    await assert.rejects(
+      () => shell.exec("sleep 30", { timeoutMs: 30 }),
+      (err) => err.code === "ADB_TIMEOUT"
+    );
+    assert.equal(spawnCount, 1);
+
+    // Next call should respawn (we don't drive it to completion — just
+    // verify that calling exec triggers a new spawn).
+    const next = shell.exec("ls", { timeoutMs: 5 });
+    await assert.rejects(() => next); // will timeout, that's fine
+    assert.equal(spawnCount, 2);
+  });
+});
+
 describe("AdbShell — FIFO queue", () => {
   it("serializes overlapping exec() calls; only writes first to stdin", async () => {
     const child = makeFakeChild();

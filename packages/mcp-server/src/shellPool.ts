@@ -24,6 +24,7 @@ const DEFAULT_TIMEOUT_MS = 15_000;
 interface QueueEntry {
   cmd: string;
   seq: number;
+  timeoutMs: number;
   resolve: (r: ExecResult) => void;
   reject: (e: unknown) => void;
 }
@@ -45,6 +46,7 @@ export class AdbShell {
   private buffer = "";
   private queue: QueueEntry[] = [];
   private inFlight: InFlight | null = null;
+  private inFlightTimer: NodeJS.Timeout | null = null;
   private readersAttached = false;
 
   constructor(
@@ -67,7 +69,7 @@ export class AdbShell {
     return this.child;
   }
 
-  exec(cmd: string, _opts: ExecOptions = {}): Promise<ExecResult> {
+  exec(cmd: string, opts: ExecOptions = {}): Promise<ExecResult> {
     if (this.shutDown) {
       return Promise.reject(
         new FlingError(
@@ -78,8 +80,9 @@ export class AdbShell {
     }
     this.seq += 1;
     const seq = this.seq;
+    const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     return new Promise<ExecResult>((resolve, reject) => {
-      this.queue.push({ cmd, seq, resolve, reject });
+      this.queue.push({ cmd, seq, timeoutMs, resolve, reject });
       this._pump();
     });
   }
@@ -96,8 +99,43 @@ export class AdbShell {
       reject: next.reject,
       stdoutLines: [],
     };
+    this.inFlightTimer = setTimeout(() => this._onTimeout(), next.timeoutMs);
     const framed = buildFramedCommand(next.cmd, this.token, next.seq);
     child.stdin!.write(framed + "\n");
+  }
+
+  private _onTimeout(): void {
+    const failed = this.inFlight;
+    this.inFlight = null;
+    this.inFlightTimer = null;
+    if (failed) {
+      failed.reject(
+        new FlingError(
+          "ADB_TIMEOUT",
+          `adb shell command (seq ${failed.seq}) timed out on ${this.serial}.`
+        )
+      );
+    }
+    this._recycle(
+      "ADB_SHELL_RECYCLED",
+      `Shell for ${this.serial} was recycled after a command timeout.`
+    );
+  }
+
+  private _recycle(
+    code: "ADB_SHELL_RECYCLED" | "ADB_SHELL_DIED",
+    reason: string
+  ): void {
+    for (const q of this.queue) {
+      q.reject(new FlingError(code, reason));
+    }
+    this.queue = [];
+    if (this.child && !this.child.killed) {
+      this.child.kill();
+    }
+    this.child = null;
+    this.readersAttached = false;
+    this.buffer = "";
   }
 
   private _attachReadersOnce(child: ChildProcess): void {
@@ -116,6 +154,10 @@ export class AdbShell {
       const m = this.matcher.matchLine(line, call.seq);
       if (m.matched) {
         this.inFlight = null;
+        if (this.inFlightTimer) {
+          clearTimeout(this.inFlightTimer);
+          this.inFlightTimer = null;
+        }
         // The framing's printf prepends a literal \n so the sentinel lines
         // up at column 0 even if the user's command emitted no trailing
         // newline. That separator surfaces as a trailing empty entry in
