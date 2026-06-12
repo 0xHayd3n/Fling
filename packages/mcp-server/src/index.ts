@@ -12,6 +12,7 @@ import { registerListDevices } from "./tools/list-devices.js";
 import { registerReadLogs } from "./tools/read-logs.js";
 import { registerScreenshot } from "./tools/screenshot.js";
 import { registerStopApp } from "./tools/stop-app.js";
+import { registerTapByText } from "./tools/tap-by-text.js";
 import { registerUninstallApp } from "./tools/uninstall-app.js";
 
 const SERVER_NAME = "fling";
@@ -32,6 +33,7 @@ async function main() {
   registerUninstallApp(server);
   registerReadLogs(server);
   registerScreenshot(server);
+  registerTapByText(server);
   registerDumpUi(server);
   registerFindOnScreen(server);
   registerDeployAndRun(server);
