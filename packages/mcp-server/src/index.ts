@@ -19,6 +19,7 @@ import { registerLongPressByText } from "./tools/long-press-by-text.js";
 import { registerDismissDialog } from "./tools/dismiss-dialog.js";
 import { registerUninstallApp } from "./tools/uninstall-app.js";
 import { registerWaitFor } from "./tools/wait-for.js";
+import { registerScrollUntilVisible } from "./tools/scroll-until-visible.js";
 
 const SERVER_NAME = "fling";
 const SERVER_VERSION = "0.4.0";
@@ -44,6 +45,7 @@ async function main() {
   registerLongPressByText(server);
   registerDismissDialog(server);
   registerWaitFor(server);
+  registerScrollUntilVisible(server);
   registerDumpUi(server);
   registerFindOnScreen(server);
   registerDeployAndRun(server);
