@@ -1,5 +1,8 @@
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  build: { lib: { entry: "src/main/index.ts", formats: ["es"], fileName: () => "main.js" } },
+  build: {
+    lib: { entry: "src/main/index.ts", formats: ["cjs"], fileName: () => "main.js" },
+    rollupOptions: { external: ["electron", /^node:/] },
+  },
 });
