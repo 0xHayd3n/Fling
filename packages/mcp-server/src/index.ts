@@ -3,6 +3,8 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { registerBuildApp } from "./tools/build-app.js";
 import { registerDeployAndRun } from "./tools/deploy-and-run.js";
+import { registerDumpUi } from "./tools/dump-ui.js";
+import { registerFindOnScreen } from "./tools/find-on-screen.js";
 import { registerInstallApp } from "./tools/install-app.js";
 import { registerLaunchApp } from "./tools/launch-app.js";
 import { registerLaunchSettings } from "./tools/launch-settings.js";
@@ -30,6 +32,8 @@ async function main() {
   registerUninstallApp(server);
   registerReadLogs(server);
   registerScreenshot(server);
+  registerDumpUi(server);
+  registerFindOnScreen(server);
   registerDeployAndRun(server);
 
   const transport = new StdioServerTransport();
