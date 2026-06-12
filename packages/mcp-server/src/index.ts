@@ -20,11 +20,18 @@ import { registerDismissDialog } from "./tools/dismiss-dialog.js";
 import { registerUninstallApp } from "./tools/uninstall-app.js";
 import { registerWaitFor } from "./tools/wait-for.js";
 import { registerScrollUntilVisible } from "./tools/scroll-until-visible.js";
+import { shutdownPool } from "./shellPool.js";
 
 const SERVER_NAME = "fling";
 const SERVER_VERSION = "0.4.0";
 
 async function main() {
+  process.on("exit", () => shutdownPool());
+  process.on("SIGINT", () => {
+    shutdownPool();
+    process.exit(0);
+  });
+
   const server = new McpServer({
     name: SERVER_NAME,
     version: SERVER_VERSION,

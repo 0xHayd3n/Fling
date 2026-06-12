@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
-import { AdbShell } from "../dist/shellPool.js";
+import { AdbShell, shutdownPool, _poolSizeForTests, _resetPoolForTests } from "../dist/shellPool.js";
 
 // Minimal fake ChildProcess. Tests push data into stdout and call
 // .emit('exit', code) to simulate the real adb shell process lifecycle.
@@ -205,6 +205,15 @@ describe("AdbShell — timeout", () => {
     const next = shell.exec("ls", { timeoutMs: 5 });
     await assert.rejects(() => next); // will timeout, that's fine
     assert.equal(spawnCount, 2);
+  });
+});
+
+describe("shell pool layer", () => {
+  it("shutdownPool() empties the pool map", () => {
+    _resetPoolForTests();
+    assert.equal(_poolSizeForTests(), 0);
+    shutdownPool();
+    assert.equal(_poolSizeForTests(), 0);
   });
 });
 

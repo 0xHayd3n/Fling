@@ -214,3 +214,39 @@ export class AdbShell {
     }
   }
 }
+
+const pool = new Map<string, AdbShell>();
+
+/**
+ * Lazily get-or-create the AdbShell for a device and exec a command on it.
+ * One persistent `adb -s <serial> shell` per device, shared across all
+ * tools that use this helper.
+ */
+export function shell(
+  serial: string,
+  cmd: string,
+  opts?: ExecOptions
+): Promise<ExecResult> {
+  let s = pool.get(serial);
+  if (!s) {
+    s = new AdbShell(serial);
+    pool.set(serial, s);
+  }
+  return s.exec(cmd, opts);
+}
+
+/** Kill all live shells and clear the pool. Wired to process exit/SIGINT. */
+export function shutdownPool(): void {
+  for (const s of pool.values()) s.shutdown();
+  pool.clear();
+}
+
+/** @internal — test-only hook to clear pool state between tests. */
+export function _resetPoolForTests(): void {
+  pool.clear();
+}
+
+/** @internal — test-only hook to inspect the pool. */
+export function _poolSizeForTests(): number {
+  return pool.size;
+}
