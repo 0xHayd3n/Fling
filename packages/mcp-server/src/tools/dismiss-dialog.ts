@@ -15,13 +15,13 @@ export interface DenyButton {
   bounds: { x1: number; y1: number; x2: number; y2: number };
 }
 
-const LOWER_DENY_LABELS = DENY_LABELS.map((l) => l.toLowerCase());
+const LOWER_DENY_LABELS = new Set(DENY_LABELS.map((l) => l.toLowerCase()));
 
 export function selectDenyButton(nodes: UiNode[]): DenyButton | null {
   for (const n of nodes) {
-    if (!n.clickable) continue;
+    if (!n.clickable || !n.enabled) continue;
     const lowered = n.text.toLowerCase();
-    if (LOWER_DENY_LABELS.includes(lowered)) {
+    if (LOWER_DENY_LABELS.has(lowered)) {
       return {
         label: n.text,
         tap_x: n.center.x,

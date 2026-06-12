@@ -65,6 +65,15 @@ describe("selectDenyButton", () => {
     assert.equal(selectDenyButton([labelOnly]), null);
   });
 
+  it("skips clickable-but-disabled deny buttons", () => {
+    const disabled = node({
+      text: "Cancel",
+      clickable: true,
+      enabled: false,
+    });
+    assert.equal(selectDenyButton([disabled]), null);
+  });
+
   it("returns the first deny button in document order", () => {
     const first = node({ text: "Skip", center: { x: 100, y: 100 } });
     const second = node({ text: "Cancel", center: { x: 200, y: 200 } });
