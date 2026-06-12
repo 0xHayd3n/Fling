@@ -1,0 +1,71 @@
+import type { Device } from "@eleutex/fling/devices";
+
+export const Channels = {
+  // Renderer → main (invoke)
+  projectOpen: "fling.project.open",
+  projectRecent: "fling.project.recent",
+  devicesList: "fling.devices.list",
+  deployRun: "fling.deploy.run",
+  deployCancel: "fling.deploy.cancel",
+  mirrorStart: "fling.mirror.start",
+  mirrorStop: "fling.mirror.stop",
+  mirrorInput: "fling.mirror.input",
+  pairingStart: "fling.pairing.start",
+  configRead: "fling.config.read",
+  configWrite: "fling.config.write",
+  // Main → renderer (send)
+  devicesChanged: "fling.devices.changed",
+  deployStarted: "fling.deploy.started",
+  deployDone: "fling.deploy.done",
+  mirrorFrame: "fling.mirror.frame",
+  mirrorResize: "fling.mirror.resize",
+  mirrorEnded: "fling.mirror.ended",
+} as const;
+
+export interface ProjectInfo { path: string; name: string; hasGradle: boolean; hasFlingConfig: boolean; }
+export interface RecentProject { path: string; name: string; lastOpened: number; }
+
+export interface DeployRunReq { projectPath: string; deviceId: string; }
+export interface DeployRunRes { runId: string; }
+export interface DeployCancelReq { runId: string; }
+export interface DeployCancelRes { cancelled: boolean; }
+export interface DeployStartedEvt { runId: string; }
+export interface DeployDoneEvt {
+  runId: string;
+  success: boolean;
+  finalMessage: string;
+  durationMs: number;
+  failedStep?: string;
+}
+
+export interface MirrorStartReq { deviceId: string; maxResolution?: number; bitrate?: number; }
+export interface MirrorStartRes { mirrorId: string; width: number; height: number; }
+export interface MirrorStopReq { mirrorId: string; }
+
+export type MirrorInputEvent =
+  | { kind: "touch-down"; x: number; y: number; pointerId: number }
+  | { kind: "touch-up"; x: number; y: number; pointerId: number }
+  | { kind: "touch-move"; x: number; y: number; pointerId: number };
+
+export interface MirrorInputReq { mirrorId: string; event: MirrorInputEvent; }
+export interface MirrorFrameEvt { mirrorId: string; nal: Uint8Array; pts: number; }
+export interface MirrorResizeEvt { mirrorId: string; width: number; height: number; }
+export interface MirrorEndedEvt { mirrorId: string; reason: string; }
+
+export interface PairingStartReq { host: string; port: number; code: string; }
+
+export interface FlingConfig {
+  version: 1;
+  window: { x: number; y: number; width: number; height: number };
+  recentProjects: RecentProject[];
+  wireless: { lastHost: string | null; lastPort: number | null };
+  mirror: {
+    maxResolution: number;
+    bitrateBps: number;
+    autoMirrorOnLaunch: boolean;
+    defaultDeviceSerial: string | null;
+  };
+  knownDevices: { serial: string; model: string; lastSeen: number }[];
+}
+
+export interface DevicesChangedEvt { devices: Device[]; }
