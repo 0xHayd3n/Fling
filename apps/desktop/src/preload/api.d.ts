@@ -29,6 +29,7 @@ export interface FlingApi {
     read: () => Promise<FlingConfig>;
     write: (patch: Partial<FlingConfig>) => Promise<{ written: true }>;
   };
+  window: { minimize: () => Promise<void>; maximize: () => Promise<void>; close: () => Promise<void>; };
   on: {
     devicesChanged: (cb: (e: DevicesChangedEvt) => void) => () => void;
     deployStarted: (cb: (e: DeployStartedEvt) => void) => () => void;

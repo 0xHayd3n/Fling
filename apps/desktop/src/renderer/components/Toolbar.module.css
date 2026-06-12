@@ -1,0 +1,11 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  background: #1f2125;
+  border-bottom: 1px solid #0e0f12;
+  -webkit-app-region: drag;
+  user-select: none;
+}
+.left, .right { display: flex; align-items: center; gap: 8px; padding: 0 8px; -webkit-app-region: no-drag; }
+.spacer { flex: 1; }

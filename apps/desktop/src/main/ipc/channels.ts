@@ -13,6 +13,9 @@ export const Channels = {
   pairingStart: "fling.pairing.start",
   configRead: "fling.config.read",
   configWrite: "fling.config.write",
+  windowMinimize: "fling.window.minimize",
+  windowMaximize: "fling.window.maximize",
+  windowClose: "fling.window.close",
   // Main → renderer (send)
   devicesChanged: "fling.devices.changed",
   deployStarted: "fling.deploy.started",

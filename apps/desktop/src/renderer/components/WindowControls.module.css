@@ -1,0 +1,12 @@
+.controls { display: flex; -webkit-app-region: no-drag; }
+.btn {
+  background: transparent;
+  border: none;
+  color: #8a8d93;
+  width: 36px;
+  height: 40px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.btn:hover { background: #2a2d34; color: #cfd2d8; }
+.close:hover { background: #c5384a; color: white; }

@@ -1,11 +1,13 @@
 import { app, BrowserWindow, Menu } from "electron";
 import path from "node:path";
 import { registerIpcHandlers } from "./ipc/handlers";
+import { createDeviceWatcher } from "./deviceWatcher";
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
 
 let mainWindow: BrowserWindow | null = null;
+let watcher: ReturnType<typeof createDeviceWatcher> | null = null;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -39,8 +41,11 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-  registerIpcHandlers();
+  watcher = createDeviceWatcher();
+  registerIpcHandlers({ watcher, getWindow: () => mainWindow });
   createWindow();
+  watcher.start();
 });
 app.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });
+app.on("before-quit", () => { watcher?.stop(); });
 app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });

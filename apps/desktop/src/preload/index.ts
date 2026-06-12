@@ -29,6 +29,11 @@ contextBridge.exposeInMainWorld("fling", {
     read: () => ipcRenderer.invoke(Channels.configRead),
     write: (patch: unknown) => ipcRenderer.invoke(Channels.configWrite, patch),
   },
+  window: {
+    minimize: () => ipcRenderer.invoke(Channels.windowMinimize),
+    maximize: () => ipcRenderer.invoke(Channels.windowMaximize),
+    close: () => ipcRenderer.invoke(Channels.windowClose),
+  },
   on: {
     devicesChanged: (cb: Listener) => onChannel(Channels.devicesChanged, cb),
     deployStarted: (cb: Listener) => onChannel(Channels.deployStarted, cb),

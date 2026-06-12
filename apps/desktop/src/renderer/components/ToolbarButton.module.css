@@ -1,0 +1,13 @@
+.btn {
+  background: #2a2d34;
+  color: #cfd2d8;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.btn:hover { background: #353941; }
+.btn:active { background: #2a2d34; border-color: #4a4d54; }
+.btn:disabled { opacity: 0.5; cursor: default; }
