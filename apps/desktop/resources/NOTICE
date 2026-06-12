@@ -1,0 +1,10 @@
+This product bundles scrcpy-server (https://github.com/Genymobile/scrcpy),
+which is licensed under the Apache License, Version 2.0.
+
+Copyright (C) 2018 Genymobile
+Copyright (C) 2018-2024 Romain Vimont
+
+You may obtain a copy of the License at:
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Pinned version: 2.7 (see commit history for the binary's SHA).
