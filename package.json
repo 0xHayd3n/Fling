@@ -4,15 +4,11 @@
   "description": "Fling — MCP server + desktop GUI for deploying Android apps.",
   "private": true,
   "type": "module",
-  "workspaces": [
-    "packages/*",
-    "apps/*"
-  ],
   "scripts": {
-    "build": "npm run build -w @eleutex/fling",
-    "test": "npm test -w @eleutex/fling",
-    "smoke": "npm run smoke -w @eleutex/fling",
-    "clean": "npm run clean -w @eleutex/fling"
+    "build": "npm run build --prefix packages/mcp-server",
+    "test": "npm test --prefix packages/mcp-server",
+    "smoke": "npm run smoke --prefix packages/mcp-server",
+    "clean": "npm run clean --prefix packages/mcp-server"
   },
   "devDependencies": {
     "typescript": "^5.6.0"
