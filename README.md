@@ -195,6 +195,23 @@ Capture a PNG via `adb exec-out screencap -p`. Returns the image inline as MCP i
 
 **Inputs:** `device_id?`, `save_to?` (host path, relative to MCP server cwd).
 
+### UI navigation tools
+
+Semantic primitives that fold `dump_ui + filter + input_tap` round-trips into single calls. Use these instead of computing tap coordinates by hand from a screenshot.
+
+| Tool | One-liner |
+|---|---|
+| `tap_by_text` | Tap the smallest clickable element containing the given visible text. Optional `scroll_into_view` swipes up to 5 times searching for the element. |
+| `tap_by_resource_id` | Tap by exact Android resource id — most robust when the id is known. |
+| `tap_by_content_desc` | Tap by accessibility label — used for icon buttons with no visible text. |
+| `long_press_by_text` | Same matching as `tap_by_text` but holds the touch for `duration_ms` (default 1000). For context menus. |
+| `wait_for` | Poll `dump_ui` until a selector matches, or throw `UI_WAIT_TIMEOUT`. Use after app launches and async transitions. |
+| `scroll_until_visible` | Swipe up/down up to `max_scrolls` times searching for an element. Returns `{found: false}` when exhausted — not an error. |
+| `find_on_screen` | Pure query (no action). Returns up to 20 matches with their bounds and centers. Used to assert state, disambiguate, or check visibility. |
+| `dismiss_dialog` | Tap the first deny/cancel/skip-style button. One dialog per call. |
+
+All eight tools accept `device_id?` and follow the standard Fling device-resolution rules. Their descriptions on the MCP wire are designed to be cheap enough that the inner navigation loop can run on a smaller model (e.g. Haiku, Sonnet) without context bloat.
+
 ### `deploy_and_run`
 
 The convenience tool: build → resolve APK → resolve device → install → launch, in one call. Stops at the first failed step and reports per-step timing.
