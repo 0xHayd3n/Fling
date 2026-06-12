@@ -1,0 +1,17 @@
+##FOREGROUND
+    topResumedActivity=ActivityRecord{82627729 u0 com.android.settings/.Settings t130}
+  ResumedActivity: ActivityRecord{82627729 u0 com.android.settings/.Settings t130}
+  mFocusedApp=ActivityRecord{82627729 u0 com.android.settings/.Settings t130}
+##SCREEN
+  mWakefulness=Awake
+  mWakefulnessChanging=false
+Display Power: com.android.server.power.PowerManagerService$2@3cfd6db
+##ORIENTATION
+    mCurrentOrientation=0
+##LOGCAT
+--------- beginning of main
+06-13 03:27:57.699  1681  1681 W binder:1681_2: type=1400 audit(0.0:209297): avc:  denied  { read } for  name="u:object_r:hwservicemanager_prop:s0" dev="tmpfs" ino=322 scontext=u:r:lbs_dbg_ext:s0 tcontext=u:object_r:hwservicemanager_prop:s0 tclass=file permissive=0
+06-13 03:27:57.702  1681  1681 W libc    : Access denied finding property "hwservicemanager.disabled"
+06-13 03:27:57.699  1681  1681 W binder:1681_2: type=1400 audit(0.0:209298): avc:  denied  { read } for  name="u:object_r:hwservicemanager_prop:s0" dev="tmpfs" ino=322 scontext=u:r:lbs_dbg_ext:s0 tcontext=u:object_r:hwservicemanager_prop:s0 tclass=file permissive=0
+06-13 03:27:57.702  1681  1681 W libc    : Access denied finding property "hwservicemanager.ready"
+06-13 03:27:57.702  1681  1681 W libc    : Access denied finding property "hwservicemanager.ready"

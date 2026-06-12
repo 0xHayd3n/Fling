@@ -45,16 +45,26 @@ export function parseDeviceState(stdout: string): DeviceStateResult {
     activity = `${fgMatch[1]}/${fgMatch[2]}`;
   }
 
-  // Screen on/off via `dumpsys power`.
+  // Screen on/off. `mWakefulness` is the source of truth on modern AOSP; the
+  // legacy `Display Power: state=ON|OFF` line stopped being emitted somewhere
+  // around Android 13 (modern builds print the PowerManagerService object ref
+  // there instead), so check it first and fall back to the legacy format.
   let screenOn: boolean | null = null;
   const screen = sections["SCREEN"] ?? "";
-  if (/Display Power: state=ON/i.test(screen)) screenOn = true;
-  else if (/Display Power: state=OFF/i.test(screen)) screenOn = false;
+  if (/mWakefulness=Awake\b/.test(screen)) screenOn = true;
+  else if (/mWakefulness=(Asleep|Dozing)\b/.test(screen)) screenOn = false;
+  else if (/Display Power: state=ON\b/i.test(screen)) screenOn = true;
+  else if (/Display Power: state=OFF\b/i.test(screen)) screenOn = false;
 
-  // Orientation via `dumpsys input`. 0/1/2/3 = portrait / landscape / etc.
+  // Orientation. Modern AOSP exposes `mCurrentOrientation=N` via `dumpsys
+  // display`; older devices used `SurfaceOrientation: N` via `dumpsys input`.
+  // We source from `dumpsys display` (see buildDeviceStateCommand) but accept
+  // either format for forward/backward compatibility.
   let orientation: number | null = null;
   const orient = sections["ORIENTATION"] ?? "";
-  const oMatch = /SurfaceOrientation:\s*(\d+)/.exec(orient);
+  const oMatch =
+    /mCurrentOrientation=(\d+)/.exec(orient) ??
+    /SurfaceOrientation:\s*(\d+)/.exec(orient);
   if (oMatch) orientation = Number(oMatch[1]);
 
   // Logcat tail — non-empty lines only.
@@ -71,15 +81,22 @@ export function parseDeviceState(stdout: string): DeviceStateResult {
   };
 }
 
-function buildCommand(): string {
+export function buildDeviceStateCommand(): string {
+  // Section markers MUST be single-quoted: Android's sh (mksh/toybox) treats
+  // an unquoted `#` as the start of a comment, which swallows the marker and
+  // every subsequent token on the line. Without the quotes `echo ##FOREGROUND`
+  // emits an empty string and parseDeviceState sees no sections at all.
   return [
-    "echo ##FOREGROUND",
-    "dumpsys activity activities | grep -E 'mResumedActivity|mFocusedActivity' || true",
-    "echo ##SCREEN",
+    "echo '##FOREGROUND'",
+    // `ResumedActivity` substring catches `mResumedActivity`,
+    // `topResumedActivity`, and `ResumedActivity:` across Android versions.
+    // `mFocusedApp` is the modern equivalent of the legacy `mFocusedActivity`.
+    "dumpsys activity activities | grep -E 'ResumedActivity|mFocusedApp|mFocusedActivity' || true",
+    "echo '##SCREEN'",
     "dumpsys power | grep -E 'Display Power|mWakefulness' || true",
-    "echo ##ORIENTATION",
-    "dumpsys input | grep SurfaceOrientation || true",
-    "echo ##LOGCAT",
+    "echo '##ORIENTATION'",
+    "dumpsys display | grep -E 'mCurrentOrientation|SurfaceOrientation' || true",
+    "echo '##LOGCAT'",
     "logcat -d -t 50",
   ].join(" ; ");
 }
@@ -119,7 +136,7 @@ export function registerDeviceState(server: McpServer): void {
         const { stdout } = await runAdb([
           ...deviceArgs,
           "shell",
-          buildCommand(),
+          buildDeviceStateCommand(),
         ]);
         const state = parseDeviceState(stdout);
         const fg = state.foreground_package ?? "?";
