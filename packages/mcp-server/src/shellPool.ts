@@ -21,6 +21,13 @@ export interface ExecResult {
 
 const DEFAULT_TIMEOUT_MS = 15_000;
 
+interface QueueEntry {
+  cmd: string;
+  seq: number;
+  resolve: (r: ExecResult) => void;
+  reject: (e: unknown) => void;
+}
+
 interface InFlight {
   seq: number;
   resolve: (r: ExecResult) => void;
@@ -36,6 +43,7 @@ export class AdbShell {
   private shutDown = false;
   private readonly spawnImpl: (cmd: string, args: string[]) => ChildProcess;
   private buffer = "";
+  private queue: QueueEntry[] = [];
   private inFlight: InFlight | null = null;
   private readersAttached = false;
 
@@ -68,20 +76,28 @@ export class AdbShell {
         )
       );
     }
-    const child = this._ensureSpawned();
-    this._attachReadersOnce(child);
-
     this.seq += 1;
     const seq = this.seq;
     return new Promise<ExecResult>((resolve, reject) => {
-      // T1.3 happy path: single-call only. Concurrency / queueing arrives
-      // in T1.4. For now, callers don't overlap exec() — if they do, the
-      // second call overwrites the first's tracker, which is exactly the
-      // failure mode T1.4 fixes.
-      this.inFlight = { seq, resolve, reject, stdoutLines: [] };
-      const framed = buildFramedCommand(cmd, this.token, seq);
-      child.stdin!.write(framed + "\n");
+      this.queue.push({ cmd, seq, resolve, reject });
+      this._pump();
     });
+  }
+
+  private _pump(): void {
+    if (this.inFlight) return;
+    const next = this.queue.shift();
+    if (!next) return;
+    const child = this._ensureSpawned();
+    this._attachReadersOnce(child);
+    this.inFlight = {
+      seq: next.seq,
+      resolve: next.resolve,
+      reject: next.reject,
+      stdoutLines: [],
+    };
+    const framed = buildFramedCommand(next.cmd, this.token, next.seq);
+    child.stdin!.write(framed + "\n");
   }
 
   private _attachReadersOnce(child: ChildProcess): void {
@@ -116,6 +132,7 @@ export class AdbShell {
             ? ""
             : call.stdoutLines.join("\n") + "\n";
         call.resolve({ stdout, exitCode: m.exitCode! });
+        this._pump();
       } else {
         call.stdoutLines.push(line);
       }

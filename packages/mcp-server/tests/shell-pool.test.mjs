@@ -158,3 +158,36 @@ describe("AdbShell — exec happy path", () => {
     assert.equal(result.stdout, "");
   });
 });
+
+describe("AdbShell — FIFO queue", () => {
+  it("serializes overlapping exec() calls; only writes first to stdin", async () => {
+    const child = makeFakeChild();
+    const shell = new AdbShell("S", { spawnImpl: () => child });
+
+    const p1 = shell.exec("a");
+    const p2 = shell.exec("b");
+    const p3 = shell.exec("c");
+
+    // Only the first call should have written. Count distinct framed commands.
+    const framedCount = (child.stdin.written.match(/__FLING_RC_/g) || []).length;
+    assert.equal(framedCount, 1, "expected only first command framed so far");
+
+    // Pull token + start completing a, then b, then c.
+    const { token } = tokenFromStdin(child.stdin.written);
+    child.stdout.emit("data", Buffer.from(`out-a\n\n__FLING_RC_${token}_1__0\n`));
+    // Yield so the next call's stdin.write fires.
+    await new Promise((r) => setImmediate(r));
+    child.stdout.emit("data", Buffer.from(`out-b\n\n__FLING_RC_${token}_2__0\n`));
+    await new Promise((r) => setImmediate(r));
+    child.stdout.emit("data", Buffer.from(`out-c\n\n__FLING_RC_${token}_3__0\n`));
+
+    const [r1, r2, r3] = await Promise.all([p1, p2, p3]);
+    assert.equal(r1.stdout, "out-a\n");
+    assert.equal(r2.stdout, "out-b\n");
+    assert.equal(r3.stdout, "out-c\n");
+
+    // After completion, all three commands should have been written.
+    const finalCount = (child.stdin.written.match(/__FLING_RC_/g) || []).length;
+    assert.equal(finalCount, 3);
+  });
+});
