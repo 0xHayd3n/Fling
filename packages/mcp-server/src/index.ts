@@ -12,6 +12,7 @@ import { registerListDevices } from "./tools/list-devices.js";
 import { registerReadLogs } from "./tools/read-logs.js";
 import { registerScreenshot } from "./tools/screenshot.js";
 import { registerStopApp } from "./tools/stop-app.js";
+import { registerTapByContentDesc } from "./tools/tap-by-content-desc.js";
 import { registerTapByResourceId } from "./tools/tap-by-resource-id.js";
 import { registerTapByText } from "./tools/tap-by-text.js";
 import { registerUninstallApp } from "./tools/uninstall-app.js";
@@ -36,6 +37,7 @@ async function main() {
   registerScreenshot(server);
   registerTapByText(server);
   registerTapByResourceId(server);
+  registerTapByContentDesc(server);
   registerDumpUi(server);
   registerFindOnScreen(server);
   registerDeployAndRun(server);
