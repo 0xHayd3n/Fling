@@ -208,6 +208,59 @@ describe("AdbShell — timeout", () => {
   });
 });
 
+describe("AdbShell — death detection", () => {
+  it("rejects in-flight call with ADB_SHELL_DIED when child exits", async () => {
+    const child = makeFakeChild();
+    const shell = new AdbShell("S", { spawnImpl: () => child });
+    const p = shell.exec("sleep 30");
+    setImmediate(() => child.emit("exit", 1, null));
+    await assert.rejects(() => p, (err) => err.code === "ADB_SHELL_DIED");
+  });
+
+  it("rejects queued calls with ADB_SHELL_DIED on exit", async () => {
+    const child = makeFakeChild();
+    const shell = new AdbShell("S", { spawnImpl: () => child });
+    const a = shell.exec("a");
+    const b = shell.exec("b");
+    setImmediate(() => child.emit("exit", 1, null));
+    await assert.rejects(() => a, (err) => err.code === "ADB_SHELL_DIED");
+    await assert.rejects(() => b, (err) => err.code === "ADB_SHELL_DIED");
+  });
+
+  it("respawns on the next exec after death", async () => {
+    let spawnCount = 0;
+    const childs = [];
+    const shell = new AdbShell("S", {
+      spawnImpl: () => {
+        spawnCount++;
+        const c = makeFakeChild();
+        childs.push(c);
+        return c;
+      },
+    });
+    const first = shell.exec("a");
+    setImmediate(() => childs[0].emit("exit", 1, null));
+    await assert.rejects(() => first, (err) => err.code === "ADB_SHELL_DIED");
+    assert.equal(spawnCount, 1);
+
+    // Trigger respawn — don't wait for it.
+    shell.exec("b").catch(() => {});
+    await new Promise((r) => setImmediate(r));
+    assert.equal(spawnCount, 2);
+  });
+
+  it("a clean shutdown does NOT double-reject if the child exits afterward", async () => {
+    const child = makeFakeChild();
+    const shell = new AdbShell("S", { spawnImpl: () => child });
+    shell._ensureSpawned();
+    shell.shutdown();
+    // child.kill() (called by shutdown) fires 'exit' asynchronously.
+    await new Promise((r) => setImmediate(r));
+    // No assertion: this is testing absence of an unhandledRejection.
+    assert.equal(child.killed, true);
+  });
+});
+
 describe("AdbShell — FIFO queue", () => {
   it("serializes overlapping exec() calls; only writes first to stdin", async () => {
     const child = makeFakeChild();

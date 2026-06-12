@@ -142,6 +142,32 @@ export class AdbShell {
     if (this.readersAttached) return;
     this.readersAttached = true;
     child.stdout!.on("data", (chunk: Buffer | string) => this._onStdout(chunk));
+    child.on("exit", (code, signal) => this._onExit(code, signal));
+  }
+
+  private _onExit(
+    code: number | null,
+    signal: NodeJS.Signals | null
+  ): void {
+    // If we already nulled the child (clean shutdown, recycle, timeout
+    // path), this is a no-op — those paths already rejected callers.
+    if (!this.child) return;
+    const reason = `adb shell for ${this.serial} exited (code=${code} signal=${signal}).`;
+    const failed = this.inFlight;
+    this.inFlight = null;
+    if (this.inFlightTimer) {
+      clearTimeout(this.inFlightTimer);
+      this.inFlightTimer = null;
+    }
+    if (failed) {
+      failed.reject(new FlingError("ADB_SHELL_DIED", reason));
+    }
+    this._recycle("ADB_SHELL_DIED", reason);
+  }
+
+  /** @internal — test seam. */
+  _currentChildForTest(): ChildProcess | null {
+    return this.child;
   }
 
   private _onStdout(chunk: Buffer | string): void {
