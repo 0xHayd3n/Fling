@@ -94,7 +94,9 @@ export function registerLaunchApp(server: McpServer): void {
         "passed to `am start -n <package>/<activity>` directly. " +
         "When `package_name` is omitted, falls back to fling.config.json (packageName, mainActivity). " +
         "Note: success means the launch intent was dispatched, not that the app is " +
-        "stable — an app that crashes immediately after onCreate still returns success.",
+        "stable — an app that crashes immediately after onCreate still returns success. " +
+        "When you need to wait for a specific UI element before proceeding, prefer " +
+        "`launch_and_wait` which polls dump_ui internally.",
       inputSchema: {
         package_name: z
           .string()

@@ -46,7 +46,10 @@ export function registerDumpUi(server: McpServer): void {
         "Defaults to interactive_only=true, which keeps nodes that are " +
         "clickable / long-clickable / scrollable / focusable OR have any of " +
         "text / content-desc / resource-id. Pair this with input_tap, " +
-        "input_swipe, or input_text for fast UI navigation.",
+        "input_swipe, or input_text for fast UI navigation. " +
+        "When the goal includes verifying the tap worked, prefer " +
+        "`tap_text_verified` (one call vs three) or `screenshot_with_ui` " +
+        "when you need both visual and semantic data.",
       inputSchema: {
         device_id: deviceIdInput,
         interactive_only: z

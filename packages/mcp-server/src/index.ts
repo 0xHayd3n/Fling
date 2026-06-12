@@ -20,6 +20,11 @@ import { registerDismissDialog } from "./tools/dismiss-dialog.js";
 import { registerUninstallApp } from "./tools/uninstall-app.js";
 import { registerWaitFor } from "./tools/wait-for.js";
 import { registerScrollUntilVisible } from "./tools/scroll-until-visible.js";
+import { registerOpenSetting } from "./tools/open-setting.js";
+import { registerTapTextVerified } from "./tools/tap-text-verified.js";
+import { registerLaunchAndWait } from "./tools/launch-and-wait.js";
+import { registerScreenshotWithUi } from "./tools/screenshot-with-ui.js";
+import { registerDeviceState } from "./tools/device-state.js";
 import { shutdownPool } from "./shellPool.js";
 
 const SERVER_NAME = "fling";
@@ -56,6 +61,11 @@ async function main() {
   registerDumpUi(server);
   registerFindOnScreen(server);
   registerDeployAndRun(server);
+  registerOpenSetting(server);
+  registerTapTextVerified(server);
+  registerLaunchAndWait(server);
+  registerScreenshotWithUi(server);
+  registerDeviceState(server);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);

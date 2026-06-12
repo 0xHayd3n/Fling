@@ -196,7 +196,9 @@ export function registerLaunchSettings(server: McpServer): void {
         "form (android.settings.WIFI_SETTINGS), restricted to a known-good allowlist of " +
         "standard android.provider.Settings.ACTION_* values. " +
         "`data_uri` is for actions that need a target, currently restricted to " +
-        "package:<dotted-android-id> (the canonical form for APPLICATION_DETAILS_SETTINGS).",
+        "package:<dotted-android-id> (the canonical form for APPLICATION_DETAILS_SETTINGS). " +
+        "For common panels by friendly name (wifi/bluetooth/apps/display/etc.), prefer " +
+        "`open_setting` — same intent dispatch with friendlier naming.",
       inputSchema: {
         action: z
           .string()

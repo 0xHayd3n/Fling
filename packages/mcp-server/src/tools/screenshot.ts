@@ -45,7 +45,8 @@ export function registerScreenshot(server: McpServer): void {
       description:
         "Grab the device's current screen as a PNG via `adb exec-out screencap -p`. " +
         "Returns the image inline as MCP image content. Pass `save_to` to also write " +
-        "the PNG to disk on the host.",
+        "the PNG to disk on the host. When you also need parsed UI nodes from the same " +
+        "moment, prefer `screenshot_with_ui` (halves the round-trips).",
       inputSchema: {
         device_id: deviceIdInput,
         save_to: z
