@@ -1,32 +1,25 @@
 {
-  "name": "@eleutex/fling",
-  "version": "0.4.0",
-  "description": "MCP server for deploying and running Android apps via adb.",
+  "name": "fling-monorepo",
+  "version": "0.5.0",
+  "description": "Fling — MCP server + desktop GUI for deploying Android apps.",
+  "private": true,
   "type": "module",
-  "bin": {
-    "fling": "dist/index.js"
-  },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
+  "workspaces": [
+    "packages/*",
+    "apps/*"
   ],
   "scripts": {
-    "build": "tsc",
-    "dev": "tsx src/index.ts",
-    "start": "node dist/index.js",
-    "clean": "rimraf dist",
-    "test": "npm run build && node --test \"tests/**/*.test.mjs\"",
-    "smoke": "node scripts/smoke.mjs"
+    "build": "npm run build -w @eleutex/fling",
+    "test": "npm test -w @eleutex/fling",
+    "smoke": "npm run smoke -w @eleutex/fling",
+    "clean": "npm run clean -w @eleutex/fling"
   },
-  "keywords": [
-    "mcp",
-    "model-context-protocol",
-    "android",
-    "adb",
-    "deploy",
-    "gradle"
-  ],
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "license": "MIT",
   "author": "Hayden Seymour <contact@haydenseymour.com>",
   "repository": {
@@ -36,18 +29,5 @@
   "bugs": {
     "url": "https://github.com/eleutex/fling/issues"
   },
-  "homepage": "https://github.com/eleutex/fling#readme",
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0",
-    "zod": "^3.23.8"
-  },
-  "devDependencies": {
-    "@types/node": "^22.0.0",
-    "rimraf": "^6.0.1",
-    "tsx": "^4.19.0",
-    "typescript": "^5.6.0"
-  }
+  "homepage": "https://github.com/eleutex/fling#readme"
 }
