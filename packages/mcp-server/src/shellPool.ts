@@ -1,6 +1,6 @@
 import { spawn as nodeSpawn, type ChildProcess } from "node:child_process";
 import { FlingError } from "./errors.js";
-import { makeFrameMatcher, newToken } from "./shellFraming.js";
+import { buildFramedCommand, makeFrameMatcher, newToken } from "./shellFraming.js";
 
 export interface AdbShellOptions {
   /**
@@ -21,6 +21,13 @@ export interface ExecResult {
 
 const DEFAULT_TIMEOUT_MS = 15_000;
 
+interface InFlight {
+  seq: number;
+  resolve: (r: ExecResult) => void;
+  reject: (e: unknown) => void;
+  stdoutLines: string[];
+}
+
 export class AdbShell {
   private child: ChildProcess | null = null;
   private readonly token: string = newToken();
@@ -28,6 +35,9 @@ export class AdbShell {
   private seq = 0;
   private shutDown = false;
   private readonly spawnImpl: (cmd: string, args: string[]) => ChildProcess;
+  private buffer = "";
+  private inFlight: InFlight | null = null;
+  private readersAttached = false;
 
   constructor(
     public readonly serial: string,
@@ -49,7 +59,7 @@ export class AdbShell {
     return this.child;
   }
 
-  exec(_cmd: string, _opts: ExecOptions = {}): Promise<ExecResult> {
+  exec(cmd: string, _opts: ExecOptions = {}): Promise<ExecResult> {
     if (this.shutDown) {
       return Promise.reject(
         new FlingError(
@@ -58,10 +68,58 @@ export class AdbShell {
         )
       );
     }
-    // Stub — real implementation lands in T1.3 (sentinel-framed read loop).
-    return Promise.reject(
-      new Error("AdbShell.exec(): pending implementation in T1.3")
-    );
+    const child = this._ensureSpawned();
+    this._attachReadersOnce(child);
+
+    this.seq += 1;
+    const seq = this.seq;
+    return new Promise<ExecResult>((resolve, reject) => {
+      // T1.3 happy path: single-call only. Concurrency / queueing arrives
+      // in T1.4. For now, callers don't overlap exec() — if they do, the
+      // second call overwrites the first's tracker, which is exactly the
+      // failure mode T1.4 fixes.
+      this.inFlight = { seq, resolve, reject, stdoutLines: [] };
+      const framed = buildFramedCommand(cmd, this.token, seq);
+      child.stdin!.write(framed + "\n");
+    });
+  }
+
+  private _attachReadersOnce(child: ChildProcess): void {
+    if (this.readersAttached) return;
+    this.readersAttached = true;
+    child.stdout!.on("data", (chunk: Buffer | string) => this._onStdout(chunk));
+  }
+
+  private _onStdout(chunk: Buffer | string): void {
+    this.buffer += chunk.toString();
+    const lines = this.buffer.split(/\n/);
+    this.buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      const call = this.inFlight;
+      if (!call) continue;
+      const m = this.matcher.matchLine(line, call.seq);
+      if (m.matched) {
+        this.inFlight = null;
+        // The framing's printf prepends a literal \n so the sentinel lines
+        // up at column 0 even if the user's command emitted no trailing
+        // newline. That separator surfaces as a trailing empty entry in
+        // stdoutLines — discard it so we don't tack a spurious blank line
+        // onto every command's stdout.
+        if (
+          call.stdoutLines.length > 0 &&
+          call.stdoutLines[call.stdoutLines.length - 1] === ""
+        ) {
+          call.stdoutLines.pop();
+        }
+        const stdout =
+          call.stdoutLines.length === 0
+            ? ""
+            : call.stdoutLines.join("\n") + "\n";
+        call.resolve({ stdout, exitCode: m.exitCode! });
+      } else {
+        call.stdoutLines.push(line);
+      }
+    }
   }
 
   shutdown(): void {
