@@ -6,6 +6,10 @@
 
 ---
 
+## Status (2026-06-13)
+
+Phase 1 is shipped and extended. The nine deploy/observe tools from the original plan are live; on top of them Fling now exposes UI navigation primitives (`tap_by_text`, `dump_ui`, …), Settings/intent shortcuts (`open_setting`, `launch_settings`), and batched composite probes (`device_state`, `screenshot_with_ui`, `launch_and_wait`). Wireless ADB pairing is in via `start_pair_qr` / `wait_for_pair`. The MCP server is published as `@eleutex/fling` v0.5.0. Phase 2 (the Electron GUI) is the next major decision point — see milestones and open questions below.
+
 ## What it is
 
 Fling wraps `adb` (and optionally `scrcpy`) behind the Model Context Protocol so an AI assistant can drive the full build → install → launch → observe loop on a physically connected (or wirelessly paired) Android device. The user never types a command — they describe the outcome, and the assistant calls Fling's tools to make it happen.
@@ -102,19 +106,24 @@ The Phase 2 GUI exists to compress steps 1 and 5 and to surface 2–4 as a guide
 
 ## Milestones
 
-1. **Skeleton** — MCP server boots, `list_devices` works end-to-end against a real phone.
-2. **Core loop** — `install_app`, `launch_app`, `read_logs` working; manual config.
-3. **Convenience** — `build_app` + `deploy_and_run`; auto-discovery of APK path.
-4. **Polish** — robust errors, multi-device handling, README with setup guide.
-5. **Publish** — push to GitHub + npm, list in an MCP registry.
-6. **(Phase 2)** — Electron GUI: device detection, setup wizard, scrcpy mirror, single deploy button.
+1. ✅ **Skeleton** — MCP server boots, `list_devices` works end-to-end against a real phone.
+2. ✅ **Core loop** — `install_app`, `launch_app`, `read_logs` working; manual config.
+3. ✅ **Convenience** — `build_app` + `deploy_and_run`; auto-discovery of APK path.
+4. ✅ **Polish** — robust errors, multi-device handling, README with setup guide.
+5. ✅ **Publish** — `@eleutex/fling` on npm; UI-navigation, intent-shortcut, and composite-probe tools added on top of the original nine.
+6. **(Phase 2)** — Electron GUI: device detection, setup wizard, scrcpy mirror, single deploy button. Not started.
 
 ---
 
-## Open questions to resolve before/while building
+## Open questions
 
-- Which build systems to support first? (Native Gradle vs Expo/React Native vs WebView wrapper.) Pick one to nail before generalizing.
-- Wireless ADB (Wi-Fi pairing) in Phase 1 or defer to Phase 2?
+Resolved:
+
+- ~~Which build systems to support first?~~ → Native Gradle is the first-class build system. Custom commands are supported via `config.buildCommand` as an escape hatch.
+- ~~Wireless ADB (Wi-Fi pairing) in Phase 1 or defer to Phase 2?~~ → Shipped in Phase 1 via `start_pair_qr` / `wait_for_pair`.
+
+Still open:
+
 - Does the GUI embed the MCP server, or talk to it as a separate process?
 - Is the commercial angle the GUI, a hosted/team version, or does it stay open-source with the value being adoption?
 

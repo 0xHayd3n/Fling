@@ -10,19 +10,14 @@ Fling wraps `adb` (the Android Debug Bridge) behind the [Model Context Protocol]
 
 ## Status
 
-**Milestone 4 — Polish:** all nine Phase-1 tools shipped, unit-tested where parsing is involved. Native Gradle is the first-class build system. See `PLAN.md` for the full roadmap.
+**Phase 1 shipped and extended.** The original nine deploy/observe tools are live and Native-Gradle-first; on top of them Fling now exposes a layer of UI navigation primitives (`tap_by_text`, `dump_ui`, …), intent shortcuts (`open_setting`, `launch_settings`), and batched composite tools (`device_state`, `screenshot_with_ui`, `launch_and_wait`) designed so an agent can drive an Android device in single-shot calls instead of round-tripping screenshot → reason → tap. See `PLAN.md` for the full roadmap.
 
-| Tool | Status |
+| Category | Tools |
 |---|---|
-| `list_devices` | ✅ Available |
-| `build_app` | ✅ Available (Gradle) |
-| `install_app` | ✅ Available |
-| `launch_app` | ✅ Available |
-| `stop_app` | ✅ Available |
-| `uninstall_app` | ✅ Available |
-| `read_logs` | ✅ Available |
-| `screenshot` | ✅ Available |
-| `deploy_and_run` | ✅ Available |
+| Build & deploy | `list_devices`, `build_app`, `install_app`, `launch_app`, `stop_app`, `uninstall_app`, `read_logs`, `screenshot`, `deploy_and_run` |
+| UI navigation | `dump_ui`, `tap_by_text`, `tap_by_resource_id`, `tap_by_content_desc`, `long_press_by_text`, `tap_text_verified`, `find_on_screen`, `wait_for`, `scroll_until_visible`, `dismiss_dialog` |
+| Intent shortcuts | `open_setting`, `launch_settings` |
+| Composite probes | `device_state`, `screenshot_with_ui`, `launch_and_wait`, `deploy_and_run` |
 
 ---
 
@@ -201,16 +196,37 @@ Semantic primitives that fold `dump_ui + filter + input_tap` round-trips into si
 
 | Tool | One-liner |
 |---|---|
+| `dump_ui` | Capture the visible Android view hierarchy via `uiautomator dump`. Returns a flat node list with text, content-desc, resource-id, bounds, and pre-computed centers. Defaults to `interactive_only: true`. |
 | `tap_by_text` | Tap the smallest clickable element containing the given visible text. Optional `scroll_into_view` swipes up to 5 times searching for the element. |
 | `tap_by_resource_id` | Tap by exact Android resource id — most robust when the id is known. |
 | `tap_by_content_desc` | Tap by accessibility label — used for icon buttons with no visible text. |
 | `long_press_by_text` | Same matching as `tap_by_text` but holds the touch for `duration_ms` (default 1000). For context menus. |
+| `tap_text_verified` | Atomic tap-and-check: find a text node, tap its center, then poll the UI for an `expect` substring to appear or a `gone` substring to disappear. Returns `{tapped, verified, before_node}`. |
 | `wait_for` | Poll `dump_ui` until a selector matches, or throw `UI_WAIT_TIMEOUT`. Use after app launches and async transitions. |
 | `scroll_until_visible` | Swipe up/down up to `max_scrolls` times searching for an element. Returns `{found: false}` when exhausted — not an error. |
 | `find_on_screen` | Pure query (no action). Returns up to 20 matches with their bounds and centers. Used to assert state, disambiguate, or check visibility. |
 | `dismiss_dialog` | Tap the first deny/cancel/skip-style button. One dialog per call. |
 
-All eight tools accept `device_id?` and follow the standard Fling device-resolution rules. Their descriptions on the MCP wire are designed to be cheap enough that the inner navigation loop can run on a smaller model (e.g. Haiku, Sonnet) without context bloat.
+Every tool here accepts `device_id?` and follows the standard Fling device-resolution rules. Their descriptions on the MCP wire include cross-pointers — e.g. `tap_by_text` says "prefer `tap_by_resource_id` for robust targeting; prefer `tap_by_content_desc` for icon buttons" — so a navigating agent picks the cheapest correct tool without re-deriving the taxonomy each turn. Costs are tuned so the inner loop can run on a smaller model (e.g. Haiku, Sonnet) without context bloat.
+
+### Intent shortcuts
+
+For destinations reachable by a known Android intent, `am start` is ~10× faster than tap-walking through the UI.
+
+| Tool | One-liner |
+|---|---|
+| `open_setting` | Open a built-in Settings panel by friendly name (`wifi`, `bluetooth`, `apps`, `display`, `sound`, `battery`, `storage`, `location`, `security`, `developer`, `about`, `date`, `language`, `accessibility`, `notifications`). |
+| `launch_settings` | Same idea but takes a raw `android.settings.<ACTION>` suffix or full action, restricted to a known-good allowlist of standard `Settings.ACTION_*` values. Optional `data_uri` accepts `package:<dotted-id>` for `APPLICATION_DETAILS_SETTINGS`. |
+
+### Composite probes
+
+Batched calls that fold multiple `adb`/MCP round-trips into one. Use these instead of stitching primitives when you need the whole state at once.
+
+| Tool | One-liner |
+|---|---|
+| `device_state` | Single shell invocation returns foreground package + activity, screen on/off (modern `mWakefulness` with legacy `Display Power` fallback), orientation, and the last 50 logcat lines. Sectioned by `##MARKER` lines and parsed host-side. |
+| `screenshot_with_ui` | Captures the PNG and the parsed UI hierarchy from the same moment, in parallel. Halves round-trips when both visual and semantic data are needed. |
+| `launch_and_wait` | Launches a package via monkey, then polls `dump_ui` until a `readyWhen` selector (by text or resource id) appears, or times out. Saves the launch → wait → screenshot → check loop. |
 
 ### `deploy_and_run`
 
@@ -237,11 +253,7 @@ npm test            # build + node --test on the pure parsers
 npm run smoke       # JSON-RPC smoke test over stdio
 ```
 
-`npm test` runs unit tests for the pure parsing functions:
-- `parseDevicesOutput` — every documented `adb devices -l` state.
-- `globToRegex` — glob → regex conversion edge cases (top-level `**`, trailing `**`, escapes).
-- `extractInstallFailure` — both legacy `Failure [CODE]` and API 30+ multi-line formats.
-- `extractBuildFailureReason` — gradle `What went wrong` extraction with fallbacks.
+`npm test` builds `dist/` and runs `node --test` across `tests/**/*.test.mjs` — ~175 cases covering both the pure parsers (`parseDevicesOutput`, `globToRegex`, `extractInstallFailure`, `extractBuildFailureReason`, `parseDeviceState`, the UI selector, the dump-UI hierarchy parser, shell framing/pool) and the host-side logic of every UI navigation, intent-shortcut, and composite-probe tool. Each tool's test file is named after the tool (`device-state.test.mjs`, `tap-by-text.test.mjs`, etc.); `tests/fixtures/` holds captured `dumpsys` and `uiautomator` output from real devices.
 
 `npm run smoke` drives the server end-to-end without an MCP client: `initialize` → `tools/list` → exercises every tool's error path and prints a summary line per response. Pass `--full` for full JSON-RPC dumps.
 

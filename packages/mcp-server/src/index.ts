@@ -28,7 +28,7 @@ import { registerDeviceState } from "./tools/device-state.js";
 import { shutdownPool } from "./shellPool.js";
 
 const SERVER_NAME = "fling";
-const SERVER_VERSION = "0.4.0";
+const SERVER_VERSION = "0.5.0";
 
 async function main() {
   process.on("exit", () => shutdownPool());
