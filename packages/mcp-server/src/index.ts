@@ -5,6 +5,7 @@ import { registerBuildApp } from "./tools/build-app.js";
 import { registerDeployAndRun } from "./tools/deploy-and-run.js";
 import { registerInstallApp } from "./tools/install-app.js";
 import { registerLaunchApp } from "./tools/launch-app.js";
+import { registerLaunchSettings } from "./tools/launch-settings.js";
 import { registerListDevices } from "./tools/list-devices.js";
 import { registerReadLogs } from "./tools/read-logs.js";
 import { registerScreenshot } from "./tools/screenshot.js";
@@ -24,6 +25,7 @@ async function main() {
   registerBuildApp(server);
   registerInstallApp(server);
   registerLaunchApp(server);
+  registerLaunchSettings(server);
   registerStopApp(server);
   registerUninstallApp(server);
   registerReadLogs(server);
