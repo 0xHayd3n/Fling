@@ -17,6 +17,26 @@ function looksLikePng(buf: Buffer): boolean {
   return buf.length >= 8 && buf.subarray(0, 8).equals(PNG_SIGNATURE);
 }
 
+/**
+ * Capture the device screen as a PNG buffer via `adb exec-out screencap -p`.
+ * Validates the result starts with a PNG signature. Used by both the
+ * standalone screenshot tool and the screenshot_with_ui composite.
+ */
+export async function fetchScreenshotPng(deviceArgs: string[]): Promise<Buffer> {
+  const { stdout } = await runAdbBinary(
+    [...deviceArgs, "exec-out", "screencap", "-p"],
+    { timeoutMs: SCREENSHOT_TIMEOUT_MS, maxBufferBytes: SCREENSHOT_MAX_BYTES }
+  );
+  if (!looksLikePng(stdout)) {
+    throw new FlingError(
+      "ADB_FAILED",
+      "screencap output did not start with a PNG signature. " +
+        "This usually means the device returned an error or the binary stream was corrupted."
+    );
+  }
+  return stdout;
+}
+
 export function registerScreenshot(server: McpServer): void {
   server.registerTool(
     "screenshot",
@@ -50,18 +70,7 @@ export function registerScreenshot(server: McpServer): void {
       try {
         const { args: deviceArgs, serial } = await resolveDeviceArgs(device_id);
 
-        const { stdout } = await runAdbBinary(
-          [...deviceArgs, "exec-out", "screencap", "-p"],
-          { timeoutMs: SCREENSHOT_TIMEOUT_MS, maxBufferBytes: SCREENSHOT_MAX_BYTES }
-        );
-
-        if (!looksLikePng(stdout)) {
-          throw new FlingError(
-            "ADB_FAILED",
-            "screencap output did not start with a PNG signature. " +
-              "This usually means the device returned an error or the binary stream was corrupted."
-          );
-        }
+        const stdout = await fetchScreenshotPng(deviceArgs);
 
         let savedTo: string | undefined;
         if (save_to) {
