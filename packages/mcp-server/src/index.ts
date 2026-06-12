@@ -18,6 +18,7 @@ import { registerTapByText } from "./tools/tap-by-text.js";
 import { registerLongPressByText } from "./tools/long-press-by-text.js";
 import { registerDismissDialog } from "./tools/dismiss-dialog.js";
 import { registerUninstallApp } from "./tools/uninstall-app.js";
+import { registerWaitFor } from "./tools/wait-for.js";
 
 const SERVER_NAME = "fling";
 const SERVER_VERSION = "0.4.0";
@@ -42,6 +43,7 @@ async function main() {
   registerTapByContentDesc(server);
   registerLongPressByText(server);
   registerDismissDialog(server);
+  registerWaitFor(server);
   registerDumpUi(server);
   registerFindOnScreen(server);
   registerDeployAndRun(server);
