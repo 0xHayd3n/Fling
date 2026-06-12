@@ -226,7 +226,7 @@ Batched calls that fold multiple `adb`/MCP round-trips into one. Use these inste
 |---|---|
 | `device_state` | Single shell invocation returns foreground package + activity, screen on/off (modern `mWakefulness` with legacy `Display Power` fallback), orientation, and the last 50 logcat lines. Sectioned by `##MARKER` lines and parsed host-side. |
 | `screenshot_with_ui` | Captures the PNG and the parsed UI hierarchy from the same moment, in parallel. Halves round-trips when both visual and semantic data are needed. |
-| `launch_and_wait` | Launches a package via monkey, then polls `dump_ui` until a `readyWhen` selector (by text or resource id) appears, or times out. Saves the launch → wait → screenshot → check loop. |
+| `launch_and_wait` | Launches a package via monkey, then polls `dump_ui` until a `readyWhen` selector (by text or resource id) appears; throws `UI_WAIT_TIMEOUT` if not. Returns `{ready, attempts}`. Saves the launch → poll → check round-trip. |
 
 ### `deploy_and_run`
 

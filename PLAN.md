@@ -8,7 +8,7 @@
 
 ## Status (2026-06-13)
 
-Phase 1 is shipped and extended. The nine deploy/observe tools from the original plan are live; on top of them Fling now exposes UI navigation primitives (`tap_by_text`, `dump_ui`, …), Settings/intent shortcuts (`open_setting`, `launch_settings`), and batched composite probes (`device_state`, `screenshot_with_ui`, `launch_and_wait`). Wireless ADB pairing is in via `start_pair_qr` / `wait_for_pair`. The MCP server is published as `@eleutex/fling` v0.5.0. Phase 2 (the Electron GUI) is the next major decision point — see milestones and open questions below.
+Phase 1 is shipped and extended. The nine deploy/observe tools from the original plan are live; on top of them Fling now exposes UI navigation primitives (`tap_by_text`, `dump_ui`, …), Settings/intent shortcuts (`open_setting`, `launch_settings`), and batched composite probes (`device_state`, `screenshot_with_ui`, `launch_and_wait`). The MCP server is published as `@eleutex/fling` v0.5.0. Wireless ADB pairing is still on the to-do list. Phase 2 (the Electron GUI) is the next major decision point — see milestones and open questions below.
 
 ## What it is
 
@@ -120,10 +120,10 @@ The Phase 2 GUI exists to compress steps 1 and 5 and to surface 2–4 as a guide
 Resolved:
 
 - ~~Which build systems to support first?~~ → Native Gradle is the first-class build system. Custom commands are supported via `config.buildCommand` as an escape hatch.
-- ~~Wireless ADB (Wi-Fi pairing) in Phase 1 or defer to Phase 2?~~ → Shipped in Phase 1 via `start_pair_qr` / `wait_for_pair`.
 
 Still open:
 
+- Wireless ADB (Wi-Fi pairing): not yet implemented. The setup README still assumes USB. Worth doing in Phase 1 — pairing is the friction point on a fresh device and a small, self-contained pair of tools (`start_pair_qr`, `wait_for_pair`) would close the gap.
 - Does the GUI embed the MCP server, or talk to it as a separate process?
 - Is the commercial angle the GUI, a hosted/team version, or does it stay open-source with the value being adoption?
 
