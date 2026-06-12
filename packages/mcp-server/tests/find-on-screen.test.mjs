@@ -1,28 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { buildFindOnScreenResult } from "../dist/tools/find-on-screen.js";
-
-function node(overrides = {}) {
-  return {
-    text: "",
-    content_desc: "",
-    resource_id: "",
-    class: "android.view.View",
-    package: "com.example",
-    bounds: { x1: 0, y1: 0, x2: 100, y2: 100 },
-    center: { x: 50, y: 50 },
-    clickable: false,
-    long_clickable: false,
-    scrollable: false,
-    focusable: false,
-    focused: false,
-    enabled: true,
-    selected: false,
-    checkable: false,
-    checked: false,
-    ...overrides,
-  };
-}
+import { node } from "./test-helpers.mjs";
 
 describe("buildFindOnScreenResult", () => {
   it("returns found:false with count 0 on no matches", () => {
