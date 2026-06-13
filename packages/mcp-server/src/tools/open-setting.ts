@@ -211,6 +211,38 @@ export async function performOpenSetting(
   return interpretSettingsResult(stdout, stderr);
 }
 
+export interface ResolveOpenSettingActionInput {
+  panel?: string;
+  action?: string;
+}
+
+/**
+ * Resolve the user's panel-or-action input into the fully qualified
+ * android.settings.* action string. Enforces XOR — exactly one of
+ * {panel, action} must be set. Delegates value validation to panelToAction
+ * (unknown panel) and normalizeSettingsAction (unknown / malformed /
+ * non-allowlisted action), each of which throws INVALID_INPUT on rejection.
+ */
+export function resolveOpenSettingAction(
+  input: ResolveOpenSettingActionInput
+): string {
+  if (!input.panel && !input.action) {
+    throw new FlingError(
+      "INVALID_INPUT",
+      "Provide either `panel` or `action`."
+    );
+  }
+  if (input.panel && input.action) {
+    throw new FlingError(
+      "INVALID_INPUT",
+      "Provide either `panel` or `action`, not both."
+    );
+  }
+  return input.panel
+    ? panelToAction(input.panel)
+    : normalizeSettingsAction(input.action!);
+}
+
 export function registerOpenSetting(server: McpServer): void {
   server.registerTool(
     "open_setting",
@@ -262,22 +294,7 @@ export function registerOpenSetting(server: McpServer): void {
     },
     async ({ device_id, panel, action, data_uri }) => {
       try {
-        if (!panel && !action) {
-          throw new FlingError(
-            "INVALID_INPUT",
-            "Provide either `panel` or `action`."
-          );
-        }
-        if (panel && action) {
-          throw new FlingError(
-            "INVALID_INPUT",
-            "Provide either `panel` or `action`, not both."
-          );
-        }
-
-        const fullAction = panel
-          ? panelToAction(panel)
-          : normalizeSettingsAction(action!);
+        const fullAction = resolveOpenSettingAction({ panel, action });
         if (data_uri !== undefined) validateSettingsDataUri(data_uri);
 
         const { args: deviceArgs, serial } = await resolveDeviceArgs(device_id);

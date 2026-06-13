@@ -42,6 +42,24 @@ export function buildLongPressArgs(
   ];
 }
 
+export interface TapDispatchInput {
+  deviceArgs: string[];
+  x: number;
+  y: number;
+  holdMs?: number;
+}
+
+/**
+ * Pick between a plain tap and a long-press based on holdMs. Returns the
+ * adb argv to run. Extracted so the dispatch decision is unit-testable
+ * without driving a real device.
+ */
+export function tapDispatchArgs(input: TapDispatchInput): string[] {
+  return input.holdMs
+    ? buildLongPressArgs(input.deviceArgs, input.x, input.y, input.holdMs)
+    : buildTapArgs(input.deviceArgs, input.x, input.y);
+}
+
 export interface TapTarget {
   tap_x: number;
   tap_y: number;
@@ -180,13 +198,14 @@ export function registerTapByText(server: McpServer): void {
           );
         }
 
-        if (hold_ms) {
-          await runAdb(
-            buildLongPressArgs(deviceArgs, target.tap_x, target.tap_y, hold_ms)
-          );
-        } else {
-          await runAdb(buildTapArgs(deviceArgs, target.tap_x, target.tap_y));
-        }
+        await runAdb(
+          tapDispatchArgs({
+            deviceArgs,
+            x: target.tap_x,
+            y: target.tap_y,
+            holdMs: hold_ms,
+          })
+        );
 
         const verb = hold_ms ? `Long-pressed (${hold_ms}ms)` : "Tapped";
         const msg = `${verb} "${target.matched_text}" at (${target.tap_x}, ${target.tap_y}) on ${serial}${target.candidates_count > 1 ? ` [${target.candidates_count} candidates; took first]` : ""}.`;

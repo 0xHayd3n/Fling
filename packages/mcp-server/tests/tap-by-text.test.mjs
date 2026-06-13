@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   buildTapArgs,
   buildLongPressArgs,
+  tapDispatchArgs,
   selectTapTarget,
 } from "../dist/tools/tap-by-text.js";
 import { node } from "./test-helpers.mjs";
@@ -42,6 +43,30 @@ describe("buildLongPressArgs", () => {
   it("uses a custom duration when provided", () => {
     const argv = buildLongPressArgs([], 50, 50, 2500);
     assert.equal(argv[argv.length - 1], "2500");
+  });
+});
+
+describe("tapDispatchArgs", () => {
+  const deviceArgs = ["-s", "emulator-5554"];
+
+  it("returns plain-tap argv when holdMs is absent", () => {
+    const argv = tapDispatchArgs({ deviceArgs, x: 610, y: 1203 });
+    assert.deepEqual(argv, buildTapArgs(deviceArgs, 610, 1203));
+  });
+
+  it("returns plain-tap argv when holdMs is undefined", () => {
+    const argv = tapDispatchArgs({
+      deviceArgs,
+      x: 100,
+      y: 200,
+      holdMs: undefined,
+    });
+    assert.deepEqual(argv, buildTapArgs(deviceArgs, 100, 200));
+  });
+
+  it("returns long-press argv when holdMs is set", () => {
+    const argv = tapDispatchArgs({ deviceArgs, x: 100, y: 200, holdMs: 1500 });
+    assert.deepEqual(argv, buildLongPressArgs(deviceArgs, 100, 200, 1500));
   });
 });
 

@@ -6,6 +6,7 @@ import {
   validateSettingsDataUri,
   buildSettingsAmArgs,
   interpretSettingsResult,
+  resolveOpenSettingAction,
   SETTINGS_ACTION_ALLOWLIST,
 } from "../dist/tools/open-setting.js";
 
@@ -232,5 +233,57 @@ describe("interpretSettingsResult", () => {
   it("treats output without 'Status: ok' as failure", () => {
     const r = interpretSettingsResult("Starting: Intent { ... }", "");
     assert.equal(r.success, false);
+  });
+});
+
+describe("resolveOpenSettingAction", () => {
+  it("returns the qualified action when only `panel` is provided", () => {
+    assert.equal(
+      resolveOpenSettingAction({ panel: "wifi" }),
+      "android.settings.WIFI_SETTINGS"
+    );
+  });
+
+  it("returns the qualified action when only `action` is provided (bare suffix)", () => {
+    assert.equal(
+      resolveOpenSettingAction({ action: "BLUETOOTH_SETTINGS" }),
+      "android.settings.BLUETOOTH_SETTINGS"
+    );
+  });
+
+  it("accepts a fully qualified action through the `action` path", () => {
+    assert.equal(
+      resolveOpenSettingAction({ action: "android.settings.DISPLAY_SETTINGS" }),
+      "android.settings.DISPLAY_SETTINGS"
+    );
+  });
+
+  it("throws INVALID_INPUT when neither panel nor action is provided", () => {
+    assert.throws(
+      () => resolveOpenSettingAction({}),
+      (err) => err.code === "INVALID_INPUT" && /either/i.test(err.message)
+    );
+  });
+
+  it("throws INVALID_INPUT when both panel and action are provided", () => {
+    assert.throws(
+      () =>
+        resolveOpenSettingAction({ panel: "wifi", action: "WIFI_SETTINGS" }),
+      (err) => err.code === "INVALID_INPUT" && /not both/i.test(err.message)
+    );
+  });
+
+  it("delegates unknown panel rejection to panelToAction", () => {
+    assert.throws(
+      () => resolveOpenSettingAction({ panel: "nonsense" }),
+      (err) => err.code === "INVALID_INPUT"
+    );
+  });
+
+  it("delegates non-allowlisted action rejection to normalizeSettingsAction", () => {
+    assert.throws(
+      () => resolveOpenSettingAction({ action: "DEFINITELY_NOT_REAL" }),
+      (err) => err.code === "INVALID_INPUT"
+    );
   });
 });
