@@ -9,7 +9,7 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "lint": "tsc --noEmit",
-    "test": "node --import tsx/esm --test \"tests/**/*.test.mjs\""
+    "test": "node --import tsx --test \"tests/**/*.test.mjs\""
   },
   "dependencies": {
     "@eleutex/fling": "file:../../packages/mcp-server"
