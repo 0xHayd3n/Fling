@@ -7,6 +7,8 @@ import {
   discoverConnectByHost as realDiscoverConnect,
 } from "./mdns.js";
 
+export { discoverConnectByHost } from "./mdns.js";
+
 export type PairStatus =
   | { kind: "waiting" }
   | { kind: "pairing" }

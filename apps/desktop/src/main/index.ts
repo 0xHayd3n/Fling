@@ -3,6 +3,7 @@ import path from "node:path";
 import { registerIpcHandlers } from "./ipc/handlers";
 import { createDeviceWatcher } from "./deviceWatcher";
 import { createScrcpyManager } from "./scrcpyClient";
+import { attemptReconnect } from "./autoReconnect";
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -53,6 +54,9 @@ app.whenReady().then(() => {
   registerIpcHandlers({ watcher, getWindow: () => mainWindow, scrcpy });
   createWindow();
   watcher.start();
+  // Auto-reconnect known wireless devices in the background. Fires and forgets;
+  // successful reconnects emit a pairingStatus event that the renderer toasts.
+  void attemptReconnect(() => mainWindow);
 });
 app.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });
 
