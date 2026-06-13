@@ -106,7 +106,17 @@ export function registerIpcHandlers(opts: {
   });
   ipcMain.handle(Channels.windowClose, async () => { opts.getWindow()?.close(); });
 
+  // adb-health latch: only push to renderer when state flips, so we don't
+  // spam the channel every 1.5s poll.
+  let lastAdbOk: boolean | null = null;
+  const reportAdb = (ok: boolean, reason?: string) => {
+    if (lastAdbOk === ok) return;
+    lastAdbOk = ok;
+    opts.getWindow()?.webContents.send(Channels.adbProbe, { ok, reason });
+  };
+
   opts.watcher.on("changed", (devices) => {
+    reportAdb(true);
     const win = opts.getWindow();
     win?.webContents.send(Channels.devicesChanged, { devices });
   });
@@ -114,7 +124,9 @@ export function registerIpcHandlers(opts: {
   // with no listener. listDevices() can fail with ADB-not-found, ADB daemon
   // crash, or a transient pipe error — without this the main process dies.
   opts.watcher.on("error", (err: unknown) => {
-    process.stderr.write(`[deviceWatcher] poll error: ${err instanceof Error ? err.message : String(err)}\n`);
+    const msg = err instanceof Error ? err.message : String(err);
+    process.stderr.write(`[deviceWatcher] poll error: ${msg}\n`);
+    reportAdb(false, msg);
   });
 
   opts.scrcpy.on("frame", (mirrorId: string, nal: Uint8Array, pts: number, isConfig: boolean, isKey: boolean) => {

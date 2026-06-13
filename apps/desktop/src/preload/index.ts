@@ -36,6 +36,7 @@ contextBridge.exposeInMainWorld("fling", {
   },
   on: {
     devicesChanged: (cb: Listener) => onChannel(Channels.devicesChanged, cb),
+    adbProbe: (cb: Listener) => onChannel(Channels.adbProbe, cb),
     deployStarted: (cb: Listener) => onChannel(Channels.deployStarted, cb),
     deployDone: (cb: Listener) => onChannel(Channels.deployDone, cb),
     mirrorFrame: (cb: Listener) => onChannel(Channels.mirrorFrame, cb),

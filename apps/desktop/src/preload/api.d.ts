@@ -4,7 +4,7 @@ import type {
   DeployStartedEvt, DeployDoneEvt,
   MirrorStartReq, MirrorStartRes, MirrorStopReq, MirrorInputReq,
   MirrorFrameEvt, MirrorResizeEvt, MirrorEndedEvt,
-  PairingStartReq, FlingConfig, DevicesChangedEvt,
+  PairingStartReq, FlingConfig, DevicesChangedEvt, AdbProbeEvt,
 } from "../main/ipc/channels";
 import type { Device } from "@eleutex/fling/devices";
 
@@ -32,6 +32,7 @@ export interface FlingApi {
   window: { minimize: () => Promise<void>; maximize: () => Promise<void>; close: () => Promise<void>; };
   on: {
     devicesChanged: (cb: (e: DevicesChangedEvt) => void) => () => void;
+    adbProbe: (cb: (e: AdbProbeEvt) => void) => () => void;
     deployStarted: (cb: (e: DeployStartedEvt) => void) => () => void;
     deployDone: (cb: (e: DeployDoneEvt) => void) => () => void;
     mirrorFrame: (cb: (e: MirrorFrameEvt) => void) => () => void;

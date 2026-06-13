@@ -11,6 +11,9 @@ export function FlingProvider({ children }: { children: ReactNode }) {
     const offDevices = window.fling.on.devicesChanged((e) =>
       dispatch({ type: "DEVICES_CHANGED", devices: e.devices })
     );
+    const offAdbProbe = window.fling.on.adbProbe((e) =>
+      dispatch({ type: "ADB_PROBE", ok: e.ok })
+    );
     const offDeployStarted = window.fling.on.deployStarted((e) =>
       dispatch({ type: "DEPLOY_STARTED", evt: e, toastId: e.runId })
     );
@@ -30,7 +33,7 @@ export function FlingProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "SET_RECENT_PROJECTS", recent })
     );
     return () => {
-      offDevices(); offDeployStarted(); offDeployDone(); offMirrorResize(); offMirrorEnded();
+      offDevices(); offAdbProbe(); offDeployStarted(); offDeployDone(); offMirrorResize(); offMirrorEnded();
     };
   }, []);
 

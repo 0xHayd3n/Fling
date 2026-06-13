@@ -18,6 +18,7 @@ export const Channels = {
   windowClose: "fling.window.close",
   // Main → renderer (send)
   devicesChanged: "fling.devices.changed",
+  adbProbe: "fling.adb.probe",
   deployStarted: "fling.deploy.started",
   deployDone: "fling.deploy.done",
   mirrorFrame: "fling.mirror.frame",
@@ -77,3 +78,4 @@ export interface FlingConfig {
 }
 
 export interface DevicesChangedEvt { devices: Device[]; }
+export interface AdbProbeEvt { ok: boolean; reason?: string; }
