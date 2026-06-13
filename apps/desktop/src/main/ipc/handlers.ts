@@ -1,23 +1,10 @@
 import { ipcMain, screen, type BrowserWindow } from "electron";
-import { Channels, type FlingConfig, type MirrorInputReq, type MirrorStartReq, type MirrorStopReq, type PairingStatus, type PairingStartWithCodeReq } from "./channels";
+import { Channels, type MirrorInputReq, type MirrorStartReq, type MirrorStopReq, type PairingStatus, type PairingStartWithCodeReq } from "./channels";
 import type { DeviceWatcher } from "../deviceWatcher";
 import { listDevices } from "@eleutex/fling/devices";
 import type { ScrcpyManager } from "../scrcpyClient";
 import { clampOpacity } from "../../renderer/lib/windowPrefs";
-
-const DEFAULT_CONFIG: FlingConfig = {
-  version: 1,
-  window: { x: 100, y: 100, width: 720, height: 540 },
-  recentProjects: [],
-  wireless: { lastHost: null, lastPort: null },
-  mirror: {
-    maxResolution: 1080,
-    bitrateBps: 4_000_000,
-    autoMirrorOnLaunch: false,
-    defaultDeviceSerial: null,
-  },
-  knownDevices: [],
-};
+import { readConfig, writeConfig, rememberPairedDevice as persistPairedDevice } from "../configStore";
 
 export function registerIpcHandlers(opts: {
   watcher: DeviceWatcher;
@@ -151,11 +138,18 @@ export function registerIpcHandlers(opts: {
   });
 
   async function rememberPairedDevice(serial: string, model: string): Promise<void> {
-    // Persistence is wired up in a later task; for now this is a no-op.
-    // Marker: KNOWN_DEVICES_PERSIST_HOOK
+    const [host, portStr] = serial.split(":");
+    const port = parseInt(portStr ?? "0", 10);
+    if (!host || !port) return;
+    await persistPairedDevice(serial, model, host, port);
   }
-  ipcMain.handle(Channels.configRead, async () => DEFAULT_CONFIG);
-  ipcMain.handle(Channels.configWrite, async () => ({ written: true }));
+  ipcMain.handle(Channels.configRead, async () => readConfig());
+  ipcMain.handle(Channels.configWrite, async (_e, patch: unknown) => {
+    if (patch && typeof patch === "object") {
+      await writeConfig(patch as Partial<import("./channels").FlingConfig>);
+    }
+    return { written: true as const };
+  });
 
   ipcMain.handle(Channels.windowMinimize, async () => { opts.getWindow()?.minimize(); });
   ipcMain.handle(Channels.windowMaximize, async () => {
