@@ -207,7 +207,7 @@ Capture a PNG via `adb exec-out screencap -p`. Returns the image inline as MCP i
 
 ### UI navigation tools
 
-Semantic primitives that fold `dump_ui + filter + input_tap` round-trips into single calls. Use these instead of computing tap coordinates by hand from a screenshot.
+Semantic primitives that fold `dump_ui + filter + tap` round-trips into single calls. Use these instead of computing tap coordinates by hand from a screenshot.
 
 | Tool | One-liner |
 |---|---|
@@ -221,7 +221,7 @@ Semantic primitives that fold `dump_ui + filter + input_tap` round-trips into si
 | `find_on_screen` | Pure query (no action). Returns up to 20 matches with their bounds and centers. Used to assert state, disambiguate, or check visibility. |
 | `dismiss_dialog` | Tap the first deny/cancel/skip-style button. One dialog per call. |
 
-Every tool here accepts `device_id?` and follows the standard Fling device-resolution rules. Their descriptions on the MCP wire include cross-pointers — e.g. `tap_by_text` says "prefer `tap_by_resource_id` for robust targeting; prefer `tap_by_content_desc` for icon buttons" — so a navigating agent picks the cheapest correct tool without re-deriving the taxonomy each turn. Costs are tuned so the inner loop can run on a smaller model (e.g. Haiku, Sonnet) without context bloat.
+Every tool here accepts `device_id?` and follows the standard Fling device-resolution rules. Their descriptions on the MCP wire include cross-pointers — e.g. `tap_by_text` says "prefer `tap_by_resource_id` for robust targeting; prefer `tap_by_content_desc` for icon buttons" — so a navigating agent picks the cheapest correct tool without re-deriving the taxonomy each turn.
 
 ### Intent shortcuts
 

@@ -8,7 +8,7 @@
 
 ## Status (2026-06-14)
 
-Phase 1 is shipped and extended. The nine deploy/observe tools from the original plan are live; on top of them Fling now exposes UI navigation primitives (`tap_by_text`, `dump_ui`, …), Settings/intent shortcuts (`open_setting`, `launch_settings`), and batched composite probes (`device_state`, `screenshot_with_ui`, `launch_and_wait`). Wireless ADB pairing has shipped too (`start_pair_qr` + `wait_for_pair` MCP tools, plus a QR-scan/pin-code flow in the desktop GUI with auto-reconnect on launch). The MCP server is published as `@0xhayd3n/fling` v0.5.0; the next release lands wireless pairing as v0.6.0. Phase 2 (the Electron GUI) continues — see milestones and open questions below.
+Phase 1 is shipped and extended. The nine deploy/observe tools from the original plan are live; on top of them Fling now exposes UI navigation primitives (`tap_by_text` with optional `hold_ms` for long-press, `dump_ui`, …), a Settings intent shortcut (`open_setting`, which accepts either a friendly panel name or an allowlisted `android.settings.*` action), and batched composite probes (`device_state`, `screenshot_with_ui`, `launch_and_wait`). Wireless ADB pairing has shipped too (`start_pair_qr` + `wait_for_pair` MCP tools, plus a QR-scan/pin-code flow in the desktop GUI with auto-reconnect on launch). The MCP server is published as `@0xhayd3n/fling` v0.5.0; the next release lands wireless pairing as v0.6.0. Phase 2 (the Electron GUI) continues — see milestones and open questions below.
 
 ## What it is
 

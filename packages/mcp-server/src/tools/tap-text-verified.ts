@@ -82,7 +82,7 @@ export function registerTapTextVerified(server: McpServer): void {
         "One-shot: dump UI, find a node containing `text`, tap its center, " +
         "then optionally re-dump and verify `expect` appears (or `gone` is " +
         "absent). Saves the dump-reason-tap-verify round-trips. Prefer over " +
-        "separate dump_ui + input_tap when the goal includes verification.",
+        "separate dump_ui + tap_by_text when the goal includes verification.",
       inputSchema: {
         device_id: deviceIdInput,
         text: z.string().min(1),
