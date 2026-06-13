@@ -1,0 +1,7 @@
+.btn {
+  position: relative;
+}
+.active {
+  background: var(--accent-soft, rgba(80, 140, 255, 0.18));
+  color: var(--accent, #5b8dff);
+}
