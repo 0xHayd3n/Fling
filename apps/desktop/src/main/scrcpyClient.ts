@@ -246,18 +246,32 @@ export function createScrcpyManager(): ScrcpyManager {
       log(`control chunk ${chunk.length}B; total ${controlBytesTotal}B (unexpected — control is supposed to be write-only from client)`);
     };
 
+    // Tracks the FIRST reason this session ended. Subsequent emissions
+    // (error → close cascade, control-socket fallout) are suppressed so the
+    // renderer sees exactly one MIRROR_ENDED per session. `stopping = true`
+    // means it was a user-initiated stop and we suppress "ended" entirely
+    // (the explicit MIRROR_STOPPED dispatch covers that).
+    let endedReason: string | null = null;
+    let stopping = false;
+    const emitEnded = (reason: string) => {
+      if (stopping) return;
+      if (endedReason !== null) return;
+      endedReason = reason;
+      emitter.emit("ended", mirrorId, reason);
+    };
+
     videoSocket.on("data", onVideoData);
     videoSocket.on("close", () => {
       log(`video socket closed (received ${videoBytesTotal}B total)`);
-      emitter.emit("ended", mirrorId, "video-socket-closed");
+      emitEnded("video-socket-closed");
       sessions.delete(mirrorId);
       try { controlSocket.destroy(); } catch {}
       void adbUnforward(localPort);
     });
-    videoSocket.on("error", (err) => emitter.emit("ended", mirrorId, `video-socket-error: ${err.message}`));
+    videoSocket.on("error", (err) => emitEnded(`video-socket-error: ${err.message}`));
     controlSocket.on("data", onControlData);
     controlSocket.on("close", () => log(`control socket closed (received ${controlBytesTotal}B total)`));
-    controlSocket.on("error", (err) => emitter.emit("ended", mirrorId, `control-socket-error: ${err.message}`));
+    controlSocket.on("error", (err) => emitEnded(`control-socket-error: ${err.message}`));
 
     await new Promise<void>((resolve, reject) => {
       const start = Date.now();
@@ -287,6 +301,11 @@ export function createScrcpyManager(): ScrcpyManager {
       controlSocket,
       serverProc,
       stop: async () => {
+        // Flip the flag BEFORE touching sockets so the close handler — which
+        // fires synchronously from .destroy() — sees stopping=true and
+        // suppresses the "ended" emit. A user-initiated stop produces
+        // MIRROR_STOPPED in the renderer; "ended" would be a duplicate.
+        stopping = true;
         try { videoSocket.destroy(); } catch {}
         try { controlSocket.destroy(); } catch {}
         try { serverProc.kill(); } catch {}
