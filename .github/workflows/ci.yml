@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Lint + test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # Each package has its own lockfile and no workspaces, so install
+      # them separately. --install-links makes apps/desktop copy (not
+      # symlink) the local file: dep — sidesteps the npm-on-Windows
+      # regression and is identical behavior on Linux.
+      - name: Install root
+        run: npm install
+
+      - name: Install mcp-server
+        run: npm install --prefix packages/mcp-server
+
+      - name: Install apps/desktop
+        run: npm install --prefix apps/desktop --install-links
+
+      # MCP server: build + the 175 parser/tool tests.
+      - name: Test mcp-server
+        run: npm test --prefix packages/mcp-server
+
+      # Desktop: tsc --noEmit catches bundle-shape regressions the test
+      # runner (which executes TS source via tsx) wouldn't see.
+      - name: Lint desktop
+        run: npm run lint --prefix apps/desktop
+
+      - name: Test desktop
+        run: npm test --prefix apps/desktop
