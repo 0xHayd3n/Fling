@@ -38,3 +38,60 @@ export function parseMdnsServices(stdout: string): ParsedMdns {
 
   return { pairing, connect, daemonAvailable: true };
 }
+
+import { runAdb } from "./adb.js";
+import { FlingError } from "./errors.js";
+
+type RunAdbFn = (args: string[]) => Promise<{ stdout: string; stderr: string }>;
+let runAdbImpl: RunAdbFn = runAdb;
+
+export function __setRunAdbForTest(fn: RunAdbFn | null): void {
+  runAdbImpl = fn ?? runAdb;
+}
+
+async function pollMdns(): Promise<ParsedMdns> {
+  const { stdout } = await runAdbImpl(["mdns", "services"]);
+  return parseMdnsServices(stdout);
+}
+
+export async function discoverPairingPort(
+  serviceName: string,
+  timeoutMs: number,
+  pollIntervalMs = 500
+): Promise<MdnsService> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const r = await pollMdns();
+    if (!r.daemonAvailable) {
+      throw new FlingError("MDNS_UNAVAILABLE", "adb mdns daemon is not available.");
+    }
+    const match = r.pairing.find((s) => s.serviceName === serviceName);
+    if (match) return match;
+    await new Promise((res) => setTimeout(res, pollIntervalMs));
+  }
+  throw new FlingError(
+    "PAIRING_TIMEOUT",
+    `No mDNS pairing service '${serviceName}' within ${timeoutMs}ms.`
+  );
+}
+
+export async function discoverConnectByHost(
+  host: string,
+  timeoutMs: number,
+  pollIntervalMs = 500
+): Promise<MdnsService> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const r = await pollMdns();
+    if (!r.daemonAvailable) {
+      throw new FlingError("MDNS_UNAVAILABLE", "adb mdns daemon is not available.");
+    }
+    const match = r.connect.find((s) => s.host === host);
+    if (match) return match;
+    await new Promise((res) => setTimeout(res, pollIntervalMs));
+  }
+  throw new FlingError(
+    "PAIRING_TIMEOUT",
+    `No mDNS connect service on host '${host}' within ${timeoutMs}ms.`
+  );
+}
