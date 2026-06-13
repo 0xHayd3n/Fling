@@ -41,21 +41,6 @@ function Body() {
     || state.mirror.status === "starting"
     || state.mirror.status === "stopping";
 
-  // Document-level mousemove for right-edge hover. Window-relative (not
-  // canvasFrame-relative) because SideControls now lives in a parallel
-  // sideArea column whose right edge IS the window's right padding edge.
-  // Only active while mirroring so we don't pay for the listener at idle.
-  useEffect(() => {
-    if (!mirroring) return;
-    const onMove = (e: MouseEvent) => {
-      const fromRight = window.innerWidth - e.clientX;
-      const inBand = fromRight >= 0 && fromRight < RIGHT_HOVER_BAND && e.clientY > TOP_HOVER_EXCLUDE;
-      setRightHover((prev) => (prev === inBand ? prev : inBand));
-    };
-    document.addEventListener("mousemove", onMove);
-    return () => document.removeEventListener("mousemove", onMove);
-  }, [mirroring]);
-
   // Auto-mirror on launch: when a single ready device appears, start the
   // mirror automatically — but only once per device-appearance, not once
   // per app lifetime. Eligible from "off" and "error" (so device reconnect
@@ -75,7 +60,18 @@ function Body() {
   }, [state.devices, state.mirror.status, mirrorCtrl]);
 
   return (
-    <>
+    <div
+      className={styles.app}
+      onMouseMove={(e) => {
+        // React's synthetic event delegation — one listener at the root,
+        // routed here. Cheaper than addEventListener("mousemove") which
+        // would fire alongside React's listener for every mouse move.
+        const fromRight = window.innerWidth - e.clientX;
+        const inBand = fromRight >= 0 && fromRight < RIGHT_HOVER_BAND && e.clientY > TOP_HOVER_EXCLUDE;
+        if (inBand !== rightHover) setRightHover(inBand);
+      }}
+      onMouseLeave={() => { if (rightHover) setRightHover(false); }}
+    >
       <div className={styles.mainArea}>
         <Toolbar
           left={
@@ -114,16 +110,14 @@ function Body() {
       </div>
       <DevicePickerPopover />
       <OpacityPopover />
-    </>
+    </div>
   );
 }
 
 export function App() {
   return (
     <FlingProvider>
-      <div className={styles.app}>
-        <Body />
-      </div>
+      <Body />
     </FlingProvider>
   );
 }

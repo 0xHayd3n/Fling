@@ -11,14 +11,28 @@
   flex-direction: column;
   gap: 10px;
   opacity: 0;
+  /* visibility: hidden + delayed transition is the key perf optimisation:
+     when the buttons are hidden, the browser skips paint AND backdrop-
+     filter entirely. opacity: 0 alone doesn't — the buttons still get
+     painted with full backdrop-filter cost on every canvas frame behind
+     them, which was the main thread bottleneck during swipes. */
+  visibility: hidden;
   pointer-events: none;
-  transition: opacity 220ms ease, transform 220ms ease;
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease,
+    visibility 0s linear 220ms;
   z-index: 20;
 }
 .column.visible {
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
   transform: translateY(-50%) translateX(0);
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease,
+    visibility 0s linear 0s;
 }
 
 .btn {
