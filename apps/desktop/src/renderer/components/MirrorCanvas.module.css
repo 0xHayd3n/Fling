@@ -1,7 +1,12 @@
 .canvas {
   display: block;
   aspect-ratio: var(--phone-aspect, auto);
-  margin: auto;
+  /* One dimension drives growth, aspect-ratio computes the other, max-*
+     clips if the computed dimension overflows the container. Together
+     this is "object-fit: contain" behavior, which canvas doesn't support
+     natively. */
+  height: 100%;
+  width: auto;
   max-width: 100%;
   max-height: 100%;
   background: var(--canvas-bg);
