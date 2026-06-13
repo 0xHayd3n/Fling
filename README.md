@@ -1,5 +1,9 @@
 # Fling
 
+[![CI](https://github.com/0xHayd3n/Fling/actions/workflows/ci.yml/badge.svg)](https://github.com/0xHayd3n/Fling/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@0xhayd3n/fling.svg)](https://www.npmjs.com/package/@0xhayd3n/fling)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 **An MCP server for deploying, running, and observing Android apps from any MCP client (Claude Code, Cursor, VS Code).**
 
 > "Build my app and run it on my phone."
