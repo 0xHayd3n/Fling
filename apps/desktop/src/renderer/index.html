@@ -14,6 +14,21 @@
       --glass-border: rgba(255, 255, 255, 0.10);
       --glass-border-strong: rgba(255, 255, 255, 0.18);
       --glass-blur: blur(28px) saturate(180%);
+      /* Liquid Glass — unified recipe used by toolbar, popovers, side controls.
+         Layer order in background: top-bright gradient over a dark tint base. */
+      --fluid-glass-tint: linear-gradient(180deg,
+        rgba(255, 255, 255, 0.14) 0%,
+        rgba(255, 255, 255, 0.04) 45%,
+        rgba(255, 255, 255, 0.00) 100%);
+      --fluid-glass-base: rgba(20, 22, 28, 0.50);
+      --fluid-glass-filter: blur(40px) saturate(180%) brightness(1.05);
+      --fluid-glass-inset:
+        inset 0 1px 0 rgba(255, 255, 255, 0.26),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.20);
+      --fluid-glass-lift:
+        0 2px 6px rgba(0, 0, 0, 0.22),
+        0 8px 22px rgba(0, 0, 0, 0.30);
       --text-primary: #e7e9ee;
       --text-secondary: #aab0b9;
       --text-tertiary: #6e7480;

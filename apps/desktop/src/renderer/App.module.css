@@ -20,10 +20,12 @@
   background: transparent;
   box-sizing: border-box;
 }
-.canvas {
-  /* The phone "shell" — always rendered at device aspect, regardless of
-     window aspect. Window can be resized freely; spare window space stays
-     transparent and the user's desktop shows through around the shell. */
+.shellWrap {
+  /* Aspect-locked invisible wrapper. The shell itself fills this wrapper
+     with overflow: hidden (rounded corners); SideControls sits absolutely
+     positioned outside this wrapper to the right, in the transparent area
+     between the shell and the window edge. */
+  position: relative;
   aspect-ratio: var(--phone-aspect, 9 / 16);
   height: 100%;
   width: auto;
@@ -31,12 +33,18 @@
   max-height: 100%;
   display: flex;
   flex-direction: column;
+}
+.canvas {
+  /* The phone "shell" — fills the shellWrap. Aspect-ratio is on the wrap,
+     not here, so SideControls (sibling) can position relative to that. */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   position: relative;
   border-radius: 28px;
   background: var(--canvas-bg);
-  /* Apple-style layered drop shadow: close+sharp + mid + distant+soft.
-     Less heavy at any single layer than one big blur, looks more natural. */
+  /* Apple-style layered drop shadow: close+sharp + mid + distant+soft. */
   box-shadow:
     0 1px 2px rgba(0, 0, 0, 0.18),
     0 4px 10px rgba(0, 0, 0, 0.18),

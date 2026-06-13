@@ -1,7 +1,11 @@
 .column {
+  /* Floats outside the right edge of the shell, anchored to its midpoint.
+     Translate keeps the slide-in animation; pointer-events disabled while
+     hidden so the column doesn't intercept clicks in the empty area. */
   position: absolute;
   top: 50%;
-  right: 14px;
+  left: 100%;
+  margin-left: 14px;
   transform: translateY(-50%) translateX(8px);
   display: flex;
   flex-direction: column;
@@ -21,28 +25,16 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  /* Same Liquid Glass recipe as the toolbar — tuned a hair brighter so
-     buttons read against any phone wallpaper. */
-  background:
-    linear-gradient(180deg,
-      rgba(255, 255, 255, 0.14) 0%,
-      rgba(255, 255, 255, 0.04) 45%,
-      rgba(255, 255, 255, 0.00) 100%),
-    rgba(20, 22, 28, 0.50);
-  backdrop-filter: blur(28px) saturate(180%) brightness(1.05);
-  -webkit-backdrop-filter: blur(28px) saturate(180%) brightness(1.05);
+  background: var(--fluid-glass-tint), var(--fluid-glass-base);
+  backdrop-filter: var(--fluid-glass-filter);
+  -webkit-backdrop-filter: var(--fluid-glass-filter);
   border: none;
   color: var(--text-primary);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.26),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.20),
-    0 2px 6px rgba(0, 0, 0, 0.22),
-    0 8px 22px rgba(0, 0, 0, 0.30);
+  box-shadow: var(--fluid-glass-inset), var(--fluid-glass-lift);
   transition: transform 120ms ease, box-shadow 120ms ease, color 120ms ease;
 }
 .btn:hover {
