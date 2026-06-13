@@ -1,0 +1,18 @@
+[
+  {
+    "description": "",
+    "devtoolsFrontendUrl": "/devtools/inspector.html?ws=127.0.0.1:9223/devtools/page/A",
+    "id": "A",
+    "title": "My Capacitor App",
+    "type": "page",
+    "url": "file:///android_asset/index.html",
+    "webSocketDebuggerUrl": "ws://127.0.0.1:9223/devtools/page/A"
+  },
+  {
+    "description": "",
+    "id": "B",
+    "title": "Service Worker",
+    "type": "service_worker",
+    "url": "file:///android_asset/sw.js"
+  }
+]
