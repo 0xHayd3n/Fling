@@ -101,6 +101,7 @@ function Body() {
           >
             <div className={styles.canvas}>
               {mirroring ? <MirrorCanvas /> : <StateHero />}
+              <PairingDialog />
             </div>
             <CornerResize />
           </div>
@@ -110,7 +111,6 @@ function Body() {
         {mirroring && <SideControls visible={rightHover} />}
       </div>
       <DevicePickerPopover />
-      <PairingDialog />
       <OpacityPopover />
     </div>
   );
