@@ -1,0 +1,23 @@
+# Normalize line endings to LF on commit, autodetect text vs binary.
+# Repo is cross-platform (Windows dev, Linux CI); LF in the index keeps
+# diffs/blame deterministic.
+* text=auto eol=lf
+
+# Windows-only scripts must stay CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Explicit binaries (don't let autodetect get clever).
+*.jar binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.icns binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tgz binary
+*.woff binary
+*.woff2 binary
