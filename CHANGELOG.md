@@ -19,11 +19,11 @@ Build, deploy, observe:
 
 UI navigation primitives (fold `dump_ui` + filter + `input_tap` round-trips into single calls):
 
-- `dump_ui`, `tap_by_text`, `tap_by_resource_id`, `tap_by_content_desc`, `long_press_by_text`, `tap_text_verified`, `wait_for`, `scroll_until_visible`, `find_on_screen`, `dismiss_dialog`.
+- `dump_ui`, `tap_by_text` (with optional `hold_ms` for long-press), `tap_by_resource_id`, `tap_by_content_desc`, `tap_text_verified`, `wait_for`, `scroll_until_visible`, `find_on_screen`, `dismiss_dialog`.
 
 Intent shortcuts (for destinations reachable by a known Android intent):
 
-- `open_setting`, `launch_settings`.
+- `open_setting` (accepts a friendly `panel` name or an explicit `android.settings.*` `action`).
 
 Composite probes (batched calls that fold multiple round-trips into one):
 
