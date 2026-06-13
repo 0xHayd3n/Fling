@@ -29,7 +29,12 @@ export function DevicePickerPopover() {
   const pick = async (serial: string) => {
     dispatch({ type: "SELECT_DEVICE", deviceId: serial });
     dispatch({ type: "MODAL_CLOSE", modal: "devicePicker" });
-    if (state.mirror.mirrorId) await window.fling.mirror.stop({ mirrorId: state.mirror.mirrorId });
+    if (state.mirror.mirrorId) {
+      await window.fling.mirror.stop({ mirrorId: state.mirror.mirrorId });
+      // Without this, configNal/firstKeyNal from the previous device stay in
+      // state and prime the new device's decoder with the wrong stream.
+      dispatch({ type: "MIRROR_STOPPED" });
+    }
     dispatch({ type: "MIRROR_STARTING", deviceId: serial });
     try {
       const res = await window.fling.mirror.start({ deviceId: serial });
