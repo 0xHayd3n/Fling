@@ -56,6 +56,11 @@ export function reducer(state: AppState, action: Action): AppState {
     case "MIRROR_STOPPED":
       return { ...state, mirror: { mirrorId: null, deviceId: null, width: 0, height: 0, status: "off", configNal: null, firstKeyNal: null, firstKeyPts: 0 } };
     case "MIRROR_RESIZED":
+      // Ignore resize events outside a running session. A late event arriving
+      // while status is "starting" would leave mirrorId/configNal null but
+      // mutate width/height, producing partially-initialized state.
+      if (state.mirror.status !== "running") return state;
+      if (action.evt.mirrorId !== state.mirror.mirrorId) return state;
       return { ...state, mirror: { ...state.mirror, width: action.evt.width, height: action.evt.height } };
     case "MIRROR_ENDED":
       return { ...state, mirror: { mirrorId: null, deviceId: null, width: 0, height: 0, status: "off", configNal: null, firstKeyNal: null, firstKeyPts: 0 } };
