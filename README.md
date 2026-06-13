@@ -18,6 +18,7 @@ Fling wraps `adb` (the Android Debug Bridge) behind the [Model Context Protocol]
 | UI navigation | `dump_ui`, `tap_by_text`, `tap_by_resource_id`, `tap_by_content_desc`, `long_press_by_text`, `tap_text_verified`, `find_on_screen`, `wait_for`, `scroll_until_visible`, `dismiss_dialog` |
 | Intent shortcuts | `open_setting`, `launch_settings` |
 | Composite probes | `device_state`, `screenshot_with_ui`, `launch_and_wait`, `deploy_and_run` |
+| Wireless pairing | `start_pair_qr`, `wait_for_pair` |
 
 ---
 
@@ -47,6 +48,16 @@ adb devices
 ```
 
 You should see your device listed as `device` (not `unauthorized` or `offline`).
+
+### 3a. Or pair wirelessly (alternative to USB)
+
+If you'd rather not use a cable:
+
+1. Phone: Settings → System → Developer options → enable **Wireless debugging**.
+2. Open the Fling desktop app and click **Pair wirelessly →** in the hero card.
+3. On the phone, tap **Pair device with QR code** and scan the QR shown in the desktop modal.
+
+The pairing is remembered. On future launches Fling reconnects silently as long as the phone is on the same WiFi.
 
 ### 4. Install Fling
 
