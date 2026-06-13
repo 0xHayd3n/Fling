@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { registerBuildApp } from "./tools/build-app.js";
@@ -30,7 +33,8 @@ import { registerWaitForPair } from "./tools/wait-for-pair.js";
 import { shutdownPool } from "./shellPool.js";
 
 const SERVER_NAME = "fling";
-const SERVER_VERSION = "0.5.0";
+const pkgPath = join(dirname(fileURLToPath(import.meta.url)), "..", "package.json");
+const SERVER_VERSION = (JSON.parse(readFileSync(pkgPath, "utf8")) as { version: string }).version;
 
 async function main() {
   process.on("exit", () => shutdownPool());
