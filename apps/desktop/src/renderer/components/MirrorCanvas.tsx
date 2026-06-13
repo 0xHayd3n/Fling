@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useFling } from "../state/FlingContext";
-import { computeLetterbox, canvasToDevice, canvasToDeviceClamped } from "../lib/coordTransform";
+import { canvasToDevice, canvasToDeviceClamped } from "../lib/coordTransform";
 import { encodeTouch } from "../lib/scrcpyControl";
 import styles from "./MirrorCanvas.module.css";
 
@@ -8,17 +8,14 @@ export function MirrorCanvas() {
   const { state } = useFling();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const decoderRef = useRef<VideoDecoder | null>(null);
-  const lbRef = useRef({ offsetX: 0, offsetY: 0, renderedW: 0, renderedH: 0 });
   const configNalRef = useRef<Uint8Array | null>(null);
   const sawIdrRef = useRef(false);
   const lastFrameBitmapRef = useRef<ImageBitmap | null>(null);
-  const deviceDimsRef = useRef({ w: 0, h: 0 });
 
   useEffect(() => {
     if (state.mirror.status !== "running") return;
     configNalRef.current = state.mirror.configNal;
     sawIdrRef.current = false;
-    deviceDimsRef.current = { w: state.mirror.width, h: state.mirror.height };
 
     const ensureBackingStore = (c: HTMLCanvasElement): boolean => {
       const dpr = window.devicePixelRatio || 1;
@@ -35,14 +32,10 @@ export function MirrorCanvas() {
     const paint = (c: HTMLCanvasElement, source: CanvasImageSource) => {
       const ctx = c.getContext("2d");
       if (!ctx) return;
-      const { w: devW, h: devH } = deviceDimsRef.current;
-      const lb = computeLetterbox(c.width, c.height, devW || 1, devH || 1);
-      lbRef.current = lb;
+      // The canvas is sized to device aspect by CSS, so we draw edge-to-edge.
       ctx.fillStyle = "#0c0d10";
       ctx.fillRect(0, 0, c.width, c.height);
-      if (lb.renderedW > 0 && lb.renderedH > 0) {
-        ctx.drawImage(source, lb.offsetX, lb.offsetY, lb.renderedW, lb.renderedH);
-      }
+      ctx.drawImage(source, 0, 0, c.width, c.height);
     };
 
     const decoder = new VideoDecoder({
@@ -50,9 +43,6 @@ export function MirrorCanvas() {
         const c = canvasRef.current;
         if (!c) { frame.close(); return; }
         ensureBackingStore(c);
-        // Cache an ImageBitmap of the frame so resize events can repaint without
-        // waiting for the next decode. createImageBitmap is async, but we paint
-        // the VideoFrame directly first for minimum latency.
         paint(c, frame);
         createImageBitmap(frame).then((bm) => {
           if (lastFrameBitmapRef.current) lastFrameBitmapRef.current.close();
@@ -134,12 +124,8 @@ export function MirrorCanvas() {
     };
   }, [state.mirror.status, state.mirror.mirrorId]);
 
-  // Track device dimensions in a ref so the resize-repaint effect doesn't
-  // need to be torn down when they change.
-  useEffect(() => {
-    deviceDimsRef.current = { w: state.mirror.width, h: state.mirror.height };
-  }, [state.mirror.width, state.mirror.height]);
-
+  // Repaint last frame when the canvas element is resized so we don't
+  // see a stale stretched image until the next decode.
   useEffect(() => {
     const c = canvasRef.current;
     if (!c) return;
@@ -155,15 +141,10 @@ export function MirrorCanvas() {
         c.width = wantW;
         c.height = wantH;
       }
-      const { w: devW, h: devH } = deviceDimsRef.current;
-      const lb = computeLetterbox(c.width, c.height, devW || 1, devH || 1);
-      lbRef.current = lb;
       ctx.fillStyle = "#0c0d10";
       ctx.fillRect(0, 0, c.width, c.height);
       const bm = lastFrameBitmapRef.current;
-      if (bm && lb.renderedW > 0 && lb.renderedH > 0) {
-        ctx.drawImage(bm, lb.offsetX, lb.offsetY, lb.renderedW, lb.renderedH);
-      }
+      if (bm) ctx.drawImage(bm, 0, 0, c.width, c.height);
     };
     const ro = new ResizeObserver(() => {
       if (raf === 0) raf = requestAnimationFrame(repaint);
@@ -176,11 +157,11 @@ export function MirrorCanvas() {
     const c = canvasRef.current;
     if (!c) return null;
     const rect = c.getBoundingClientRect();
-    const dpr = window.devicePixelRatio;
     return canvasToDevice(
-      (e.clientX - rect.left) * dpr,
-      (e.clientY - rect.top) * dpr,
-      lbRef.current,
+      e.clientX - rect.left,
+      e.clientY - rect.top,
+      rect.width,
+      rect.height,
       state.mirror.width,
       state.mirror.height,
     );
@@ -189,11 +170,11 @@ export function MirrorCanvas() {
     const c = canvasRef.current;
     if (!c) return null;
     const rect = c.getBoundingClientRect();
-    const dpr = window.devicePixelRatio;
     return canvasToDeviceClamped(
-      (e.clientX - rect.left) * dpr,
-      (e.clientY - rect.top) * dpr,
-      lbRef.current,
+      e.clientX - rect.left,
+      e.clientY - rect.top,
+      rect.width,
+      rect.height,
       state.mirror.width,
       state.mirror.height,
     );
@@ -210,10 +191,15 @@ export function MirrorCanvas() {
     });
   }
 
+  const aspectStyle: React.CSSProperties = state.mirror.width && state.mirror.height
+    ? ({ "--phone-aspect": `${state.mirror.width} / ${state.mirror.height}` } as React.CSSProperties)
+    : {};
+
   return (
     <canvas
       ref={canvasRef}
       className={styles.canvas}
+      style={aspectStyle}
       onPointerDown={(e) => {
         const p = devicePos(e);
         if (p) { (e.target as HTMLElement).setPointerCapture(e.pointerId); send("down", p.x, p.y, e.pointerId); }
@@ -227,13 +213,13 @@ export function MirrorCanvas() {
       onPointerUp={(e) => {
         const el = e.target as HTMLElement;
         // Only release if we captured. setPointerCapture only ran when the
-        // initial devicePos was inside the letterbox; calling
-        // releasePointerCapture unconditionally on a non-captured pointer
-        // throws DOMException which React swallows silently.
+        // initial devicePos was inside the canvas; calling releasePointerCapture
+        // unconditionally on a non-captured pointer throws DOMException which
+        // React swallows silently.
         if (el.hasPointerCapture(e.pointerId)) {
           // Always send "up" when we were tracking the touch, even if the
-          // finger released outside the device area. Dropping it leaves
-          // scrcpy thinking the touch is still down (stuck-finger state).
+          // finger released outside the canvas area. Dropping it leaves scrcpy
+          // thinking the touch is still down (stuck-finger state).
           const p = devicePosClamped(e);
           if (p) send("up", p.x, p.y, e.pointerId);
           el.releasePointerCapture(e.pointerId);
