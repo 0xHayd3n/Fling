@@ -12,3 +12,6 @@ dist/
 out/
 
 .superpowers/
+
+# Internal planning docs — not part of the published repo
+docs/superpowers/

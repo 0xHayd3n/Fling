@@ -1,6 +1,6 @@
 import type { BrowserWindow } from "electron";
-import { discoverConnectByHost } from "@eleutex/fling/pairing";
-import { runAdb } from "@eleutex/fling/adb";
+import { discoverConnectByHost } from "@0xhayd3n/fling/pairing";
+import { runAdb } from "@0xhayd3n/fling/adb";
 import { readConfig } from "./configStore";
 import { Channels } from "./ipc/channels";
 

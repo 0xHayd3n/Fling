@@ -1,5 +1,5 @@
 import type { AppState, Toast } from "./types";
-import type { Device } from "@eleutex/fling/devices";
+import type { Device } from "@0xhayd3n/fling/devices";
 import type {
   DeployStartedEvt, DeployDoneEvt,
   MirrorStartRes, MirrorResizeEvt, MirrorEndedEvt,

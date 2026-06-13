@@ -27,7 +27,7 @@ export function StateHero() {
       <>
         <h2>ADB not found</h2>
         <p>Install Android Platform Tools, then restart Fling.</p>
-        <a href="https://github.com/eleutex/fling#setup-one-time" target="_blank" rel="noreferrer">Setup docs ↗</a>
+        <a href="https://github.com/0xHayd3n/Fling#setup-one-time" target="_blank" rel="noreferrer">Setup docs ↗</a>
       </>
     );
   } else if (unauthorized) {

@@ -1,7 +1,7 @@
 import { ipcMain, type BrowserWindow } from "electron";
 import { Channels, type MirrorInputReq, type MirrorStartReq, type MirrorStopReq, type PairingStatus, type PairingStartWithCodeReq } from "./channels";
 import type { DeviceWatcher } from "../deviceWatcher";
-import { listDevices } from "@eleutex/fling/devices";
+import { listDevices } from "@0xhayd3n/fling/devices";
 import type { ScrcpyManager } from "../scrcpyClient";
 import { clampOpacity } from "../../renderer/lib/windowPrefs";
 import { readConfig, writeConfig, rememberPairedDevice as persistPairedDevice } from "../configStore";
@@ -69,7 +69,7 @@ export function registerIpcHandlers(opts: {
   };
 
   ipcMain.handle(Channels.pairingStartQr, async () => {
-    const { startPairQr } = await import("@eleutex/fling/pairing");
+    const { startPairQr } = await import("@0xhayd3n/fling/pairing");
     if (currentPairing) {
       currentPairing.ac.abort();
       currentPairing = null;
@@ -87,7 +87,7 @@ export function registerIpcHandlers(opts: {
   });
 
   ipcMain.handle(Channels.pairingStartWithCode, async (_e, req: PairingStartWithCodeReq) => {
-    const { pairWithCode } = await import("@eleutex/fling/pairing");
+    const { pairWithCode } = await import("@0xhayd3n/fling/pairing");
     if (currentPairing) {
       currentPairing.ac.abort();
       currentPairing = null;

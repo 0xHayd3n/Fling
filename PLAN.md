@@ -8,7 +8,7 @@
 
 ## Status (2026-06-14)
 
-Phase 1 is shipped and extended. The nine deploy/observe tools from the original plan are live; on top of them Fling now exposes UI navigation primitives (`tap_by_text`, `dump_ui`, …), Settings/intent shortcuts (`open_setting`, `launch_settings`), and batched composite probes (`device_state`, `screenshot_with_ui`, `launch_and_wait`). Wireless ADB pairing has shipped too (`start_pair_qr` + `wait_for_pair` MCP tools, plus a QR-scan/pin-code flow in the desktop GUI with auto-reconnect on launch). The MCP server is published as `@eleutex/fling` v0.5.0; the next release lands wireless pairing as v0.6.0. Phase 2 (the Electron GUI) continues — see milestones and open questions below.
+Phase 1 is shipped and extended. The nine deploy/observe tools from the original plan are live; on top of them Fling now exposes UI navigation primitives (`tap_by_text`, `dump_ui`, …), Settings/intent shortcuts (`open_setting`, `launch_settings`), and batched composite probes (`device_state`, `screenshot_with_ui`, `launch_and_wait`). Wireless ADB pairing has shipped too (`start_pair_qr` + `wait_for_pair` MCP tools, plus a QR-scan/pin-code flow in the desktop GUI with auto-reconnect on launch). The MCP server is published as `@0xhayd3n/fling` v0.5.0; the next release lands wireless pairing as v0.6.0. Phase 2 (the Electron GUI) continues — see milestones and open questions below.
 
 ## What it is
 
@@ -99,7 +99,7 @@ The Phase 2 GUI exists to compress steps 1 and 5 and to surface 2–4 as a guide
 ## Naming & packaging
 
 - **Product name:** Fling
-- **npm package:** `fling-mcp` (verify availability) or scoped `@eleutex/fling`
+- **npm package:** scoped `@0xhayd3n/fling`
 - Do **not** put "MCP" in the product name itself — it's an implementation detail. Describe it as "Fling — an MCP server for deploying apps to Android" in the README and registry listing.
 
 ---
@@ -110,9 +110,9 @@ The Phase 2 GUI exists to compress steps 1 and 5 and to surface 2–4 as a guide
 2. ✅ **Core loop** — `install_app`, `launch_app`, `read_logs` working; manual config.
 3. ✅ **Convenience** — `build_app` + `deploy_and_run`; auto-discovery of APK path.
 4. ✅ **Polish** — robust errors, multi-device handling, README with setup guide.
-5. ✅ **Publish** — `@eleutex/fling` on npm; UI-navigation, intent-shortcut, and composite-probe tools added on top of the original nine.
+5. ✅ **Publish** — `@0xhayd3n/fling` on npm; UI-navigation, intent-shortcut, and composite-probe tools added on top of the original nine.
 6. **(Phase 2)** — Electron GUI: device detection, setup wizard, scrcpy mirror, single deploy button. Not started.
-7. ✅ **Wireless pairing** — QR-scan and pin-code flows, shared core in `@eleutex/fling/pairing`, auto-reconnect on launch. Two MCP tools (`start_pair_qr`, `wait_for_pair`) for headless agents.
+7. ✅ **Wireless pairing** — QR-scan and pin-code flows, shared core in `@0xhayd3n/fling/pairing`, auto-reconnect on launch. Two MCP tools (`start_pair_qr`, `wait_for_pair`) for headless agents.
 
 ---
 

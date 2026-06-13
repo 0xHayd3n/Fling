@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import { listDevices, type Device } from "@eleutex/fling/devices";
+import { listDevices, type Device } from "@0xhayd3n/fling/devices";
 
 export interface DeviceWatcher extends EventEmitter {
   start(): void;

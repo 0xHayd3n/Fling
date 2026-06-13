@@ -1,4 +1,4 @@
-import type { Device } from "@eleutex/fling/devices";
+import type { Device } from "@0xhayd3n/fling/devices";
 import type { RecentProject } from "../../main/ipc/channels";
 import { loadWindowPrefs, type WindowPrefs } from "../lib/windowPrefs";
 

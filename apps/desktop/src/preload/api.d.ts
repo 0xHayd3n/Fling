@@ -7,7 +7,7 @@ import type {
   PairingStartQrRes, PairingStartWithCodeReq, PairingStatusEvt, FlingConfig, DevicesChangedEvt, AdbProbeEvt,
   WindowBounds,
 } from "../main/ipc/channels";
-import type { Device } from "@eleutex/fling/devices";
+import type { Device } from "@0xhayd3n/fling/devices";
 
 export interface FlingApi {
   version: string;

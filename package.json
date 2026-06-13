@@ -25,10 +25,10 @@
   "author": "Hayden Seymour <contact@haydenseymour.com>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/eleutex/fling.git"
+    "url": "git+https://github.com/0xHayd3n/Fling.git"
   },
   "bugs": {
-    "url": "https://github.com/eleutex/fling/issues"
+    "url": "https://github.com/0xHayd3n/Fling/issues"
   },
-  "homepage": "https://github.com/eleutex/fling#readme"
+  "homepage": "https://github.com/0xHayd3n/Fling#readme"
 }

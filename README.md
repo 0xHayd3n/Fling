@@ -62,7 +62,7 @@ The pairing is remembered. On future launches Fling reconnects silently as long 
 ### 4. Install Fling
 
 ```
-npm install -g @eleutex/fling
+npm install -g @0xhayd3n/fling
 ```
 
 Or use it directly with `npx`.
@@ -76,7 +76,7 @@ Or use it directly with `npx`.
   "mcpServers": {
     "fling": {
       "command": "npx",
-      "args": ["-y", "@eleutex/fling"]
+      "args": ["-y", "@0xhayd3n/fling"]
     }
   }
 }
@@ -254,15 +254,15 @@ This is what gets called when someone says *"run this on my phone."*
 ## Development
 
 ```
-git clone <repo>
+git clone https://github.com/0xHayd3n/Fling.git
 cd Fling
-npm install
-npm run build       # tsc → dist/
-npm run dev         # tsx src/index.ts
-npm start           # node dist/index.js
-npm test            # build + node --test on the pure parsers
-npm run smoke       # JSON-RPC smoke test over stdio
+npm run setup       # installs root, packages/mcp-server, apps/desktop
+npm run build       # build the MCP server (tsc → packages/mcp-server/dist/)
+npm test            # mcp-server + desktop test suites
+npm run smoke       # JSON-RPC smoke test over stdio against the built server
 ```
+
+The monorepo holds two workspaces: `packages/mcp-server` (the published MCP server) and `apps/desktop` (the private Electron GUI). Per-workspace dev commands live in their own `package.json` — e.g. `npm start --prefix apps/desktop` to launch the Electron app, `npm run dev --prefix packages/mcp-server` to run the server with `tsx`.
 
 `npm test` builds `dist/` and runs `node --test` across `tests/**/*.test.mjs` — ~175 cases covering both the pure parsers (`parseDevicesOutput`, `globToRegex`, `extractInstallFailure`, `extractBuildFailureReason`, `parseDeviceState`, the UI selector, the dump-UI hierarchy parser, shell framing/pool) and the host-side logic of every UI navigation, intent-shortcut, and composite-probe tool. Each tool's test file is named after the tool (`device-state.test.mjs`, `tap-by-text.test.mjs`, etc.); `tests/fixtures/` holds captured `dumpsys` and `uiautomator` output from real devices.
 
