@@ -14,6 +14,7 @@
     "./errors": "./dist/errors.js",
     "./apkResolver": "./dist/apkResolver.js",
     "./apkFinder": "./dist/apkFinder.js",
+    "./pairing": "./dist/pairing.js",
     "./operations/install": "./dist/tools/install-app.js",
     "./operations/launch": "./dist/tools/launch-app.js"
   },
