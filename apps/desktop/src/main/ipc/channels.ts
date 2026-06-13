@@ -16,6 +16,8 @@ export const Channels = {
   windowMinimize: "fling.window.minimize",
   windowMaximize: "fling.window.maximize",
   windowClose: "fling.window.close",
+  windowSetAlwaysOnTop: "fling.window.setAlwaysOnTop",
+  windowSetOpacity: "fling.window.setOpacity",
   // Main → renderer (send)
   devicesChanged: "fling.devices.changed",
   adbProbe: "fling.adb.probe",

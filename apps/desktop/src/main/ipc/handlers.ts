@@ -3,6 +3,7 @@ import { Channels, type FlingConfig, type MirrorInputReq, type MirrorStartReq, t
 import type { DeviceWatcher } from "../deviceWatcher";
 import { listDevices } from "@eleutex/fling/devices";
 import type { ScrcpyManager } from "../scrcpyClient";
+import { clampOpacity } from "../../renderer/lib/windowPrefs";
 
 const DEFAULT_CONFIG: FlingConfig = {
   version: 1,
@@ -105,6 +106,12 @@ export function registerIpcHandlers(opts: {
     if (w.isMaximized()) w.unmaximize(); else w.maximize();
   });
   ipcMain.handle(Channels.windowClose, async () => { opts.getWindow()?.close(); });
+  ipcMain.handle(Channels.windowSetAlwaysOnTop, async (_e, pinned: unknown) => {
+    opts.getWindow()?.setAlwaysOnTop(Boolean(pinned), "normal");
+  });
+  ipcMain.handle(Channels.windowSetOpacity, async (_e, opacity: unknown) => {
+    opts.getWindow()?.setOpacity(clampOpacity(opacity));
+  });
 
   // adb-health latch: only push to renderer when state flips, so we don't
   // spam the channel every 1.5s poll.
