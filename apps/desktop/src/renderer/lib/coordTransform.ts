@@ -32,3 +32,20 @@ export function canvasToDevice(
     y: Math.floor(((mouseY - lb.offsetY) * deviceH) / lb.renderedH),
   };
 }
+
+// Clamping variant used for pointer-up events. Dropping an up-event when the
+// finger releases outside the device area would leave the device thinking a
+// touch is still down — a stuck-finger state until the next session restart.
+// Always returns a coordinate; clamps the input to the rendered area.
+export function canvasToDeviceClamped(
+  mouseX: number, mouseY: number, lb: Letterbox, deviceW: number, deviceH: number,
+): { x: number; y: number } {
+  const maxX = lb.offsetX + lb.renderedW - 1;
+  const maxY = lb.offsetY + lb.renderedH - 1;
+  const clampedX = Math.min(maxX, Math.max(lb.offsetX, mouseX));
+  const clampedY = Math.min(maxY, Math.max(lb.offsetY, mouseY));
+  return {
+    x: Math.floor(((clampedX - lb.offsetX) * deviceW) / Math.max(1, lb.renderedW)),
+    y: Math.floor(((clampedY - lb.offsetY) * deviceH) / Math.max(1, lb.renderedH)),
+  };
+}

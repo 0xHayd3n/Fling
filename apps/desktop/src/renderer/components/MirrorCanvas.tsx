@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useFling } from "../state/FlingContext";
-import { computeLetterbox, canvasToDevice } from "../lib/coordTransform";
+import { computeLetterbox, canvasToDevice, canvasToDeviceClamped } from "../lib/coordTransform";
 import { encodeTouch } from "../lib/scrcpyControl";
 import styles from "./MirrorCanvas.module.css";
 
@@ -185,6 +185,19 @@ export function MirrorCanvas() {
       state.mirror.height,
     );
   }
+  function devicePosClamped(e: React.PointerEvent<HTMLCanvasElement>) {
+    const c = canvasRef.current;
+    if (!c) return null;
+    const rect = c.getBoundingClientRect();
+    const dpr = window.devicePixelRatio;
+    return canvasToDeviceClamped(
+      (e.clientX - rect.left) * dpr,
+      (e.clientY - rect.top) * dpr,
+      lbRef.current,
+      state.mirror.width,
+      state.mirror.height,
+    );
+  }
   function send(action: "down" | "up" | "move", x: number, y: number, pointerId: number) {
     if (!state.mirror.mirrorId) return;
     const bytes = encodeTouch(action, x, y, pointerId, state.mirror.width, state.mirror.height);
@@ -212,9 +225,19 @@ export function MirrorCanvas() {
         }
       }}
       onPointerUp={(e) => {
-        const p = devicePos(e);
-        if (p) send("up", p.x, p.y, e.pointerId);
-        (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+        const el = e.target as HTMLElement;
+        // Only release if we captured. setPointerCapture only ran when the
+        // initial devicePos was inside the letterbox; calling
+        // releasePointerCapture unconditionally on a non-captured pointer
+        // throws DOMException which React swallows silently.
+        if (el.hasPointerCapture(e.pointerId)) {
+          // Always send "up" when we were tracking the touch, even if the
+          // finger released outside the device area. Dropping it leaves
+          // scrcpy thinking the touch is still down (stuck-finger state).
+          const p = devicePosClamped(e);
+          if (p) send("up", p.x, p.y, e.pointerId);
+          el.releasePointerCapture(e.pointerId);
+        }
       }}
     />
   );
