@@ -41,12 +41,12 @@ export function registerDumpUi(server: McpServer): void {
       description:
         "Capture the visible Android view hierarchy via `uiautomator dump`. " +
         "Returns a flat list of elements with text, content-desc, resource-id, " +
-        "bounds, and a pre-computed center {x,y} — use these to drive input_tap " +
-        "by semantic targeting instead of guessing pixels from a screenshot. " +
+        "bounds, and a pre-computed center {x,y}. Feed matches into " +
+        "`tap_by_text`, `tap_by_resource_id`, or `tap_by_content_desc` " +
+        "instead of computing tap coordinates from a screenshot. " +
         "Defaults to interactive_only=true, which keeps nodes that are " +
         "clickable / long-clickable / scrollable / focusable OR have any of " +
-        "text / content-desc / resource-id. Pair this with input_tap, " +
-        "input_swipe, or input_text for fast UI navigation. " +
+        "text / content-desc / resource-id. " +
         "When the goal includes verifying the tap worked, prefer " +
         "`tap_text_verified` (one call vs three) or `screenshot_with_ui` " +
         "when you need both visual and semantic data.",
