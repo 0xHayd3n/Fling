@@ -109,6 +109,12 @@ const requests = [
       arguments: { by: "text", value: "definitely-not-on-screen-xyz" },
     },
   },
+  {
+    jsonrpc: "2.0",
+    id: 100,
+    method: "tools/call",
+    params: { name: "start_pair_qr", arguments: {} },
+  },
 ];
 
 const child = spawn(process.execPath, [serverEntry], {
