@@ -1,9 +1,11 @@
 import { useEffect, useRef } from "react";
 import { useFling } from "../state/FlingContext";
+import { useMirrorControl } from "../state/useMirrorControl";
 import styles from "./DevicePickerPopover.module.css";
 
 export function DevicePickerPopover() {
   const { state, dispatch } = useFling();
+  const mirrorCtrl = useMirrorControl();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -29,20 +31,7 @@ export function DevicePickerPopover() {
   const pick = async (serial: string) => {
     dispatch({ type: "SELECT_DEVICE", deviceId: serial });
     dispatch({ type: "MODAL_CLOSE", modal: "devicePicker" });
-    if (state.mirror.mirrorId) {
-      await window.fling.mirror.stop({ mirrorId: state.mirror.mirrorId });
-      // Without this, configNal/firstKeyNal from the previous device stay in
-      // state and prime the new device's decoder with the wrong stream.
-      dispatch({ type: "MIRROR_STOPPED" });
-    }
-    dispatch({ type: "MIRROR_STARTING", deviceId: serial });
-    try {
-      const res = await window.fling.mirror.start({ deviceId: serial });
-      dispatch({ type: "MIRROR_STARTED", res, deviceId: serial });
-    } catch (err) {
-      dispatch({ type: "MIRROR_STOPPED" });
-      console.error(err);
-    }
+    await mirrorCtrl.switchTo(serial).catch(() => { /* hook handled dispatch */ });
   };
 
   return (

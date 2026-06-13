@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { useFling } from "../state/FlingContext";
+import { useMirrorControl } from "../state/useMirrorControl";
 import { ToolbarButton } from "./ToolbarButton";
 import { PhoneIcon, ChevronDownIcon } from "./Icons";
 import styles from "./MirrorButton.module.css";
@@ -8,6 +9,7 @@ const LONG_PRESS_MS = 300;
 
 export function MirrorButton() {
   const { state, dispatch } = useFling();
+  const mirrorCtrl = useMirrorControl();
   const pressTimer = useRef<number | null>(null);
   const fired = useRef(false);
 
@@ -25,35 +27,15 @@ export function MirrorButton() {
     return null;
   };
 
-  const startMirror = async () => {
-    const deviceId = resolveDeviceId();
-    if (!deviceId) { dispatch({ type: "MODAL_OPEN", modal: "devicePicker" }); return; }
-    dispatch({ type: "MIRROR_STARTING", deviceId });
-    try {
-      const res = await window.fling.mirror.start({ deviceId });
-      dispatch({ type: "MIRROR_STARTED", res, deviceId });
-    } catch (err) {
-      dispatch({ type: "MIRROR_STOPPED" });
-      console.error(err);
-    }
-  };
-  const stopMirror = async () => {
-    if (!state.mirror.mirrorId) return;
-    dispatch({ type: "MIRROR_STOPPING" });
-    try {
-      await window.fling.mirror.stop({ mirrorId: state.mirror.mirrorId });
-    } catch (err) {
-      console.error("[mirror.stop]", err);
-    } finally {
-      // Always land in "off" even if stop IPC threw — otherwise the UI is
-      // stuck in "stopping" with no recovery path.
-      dispatch({ type: "MIRROR_STOPPED" });
-    }
-  };
-
   const onClick = () => {
     if (fired.current) { fired.current = false; return; }
-    if (isOn) void stopMirror(); else void startMirror();
+    if (isOn) {
+      void mirrorCtrl.stop();
+    } else {
+      const deviceId = resolveDeviceId();
+      if (!deviceId) { dispatch({ type: "MODAL_OPEN", modal: "devicePicker" }); return; }
+      void mirrorCtrl.start(deviceId).catch(() => { /* hook already dispatched MIRROR_STOPPED */ });
+    }
   };
 
   return (
