@@ -26,6 +26,7 @@ import { registerLaunchAndWait } from "./tools/launch-and-wait.js";
 import { registerScreenshotWithUi } from "./tools/screenshot-with-ui.js";
 import { registerDeviceState } from "./tools/device-state.js";
 import { registerStartPairQr } from "./tools/start-pair-qr.js";
+import { registerWaitForPair } from "./tools/wait-for-pair.js";
 import { shutdownPool } from "./shellPool.js";
 
 const SERVER_NAME = "fling";
@@ -68,6 +69,7 @@ async function main() {
   registerScreenshotWithUi(server);
   registerDeviceState(server);
   registerStartPairQr(server);
+  registerWaitForPair(server);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
