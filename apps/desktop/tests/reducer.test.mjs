@@ -95,4 +95,19 @@ describe("reducer", () => {
     assert.equal(done.deploy.status, "idle");
     assert.equal(done.deploy.runId, null);
   });
+
+  it("WINDOW_SET_PIN updates only state.window.isPinned", () => {
+    const next = reducer(INITIAL_STATE, { type: "WINDOW_SET_PIN", pinned: true });
+    assert.equal(next.window.isPinned, true);
+    assert.equal(next.window.opacity, INITIAL_STATE.window.opacity, "opacity untouched");
+  });
+
+  it("WINDOW_SET_OPACITY clamps to [0.3, 1.0] inside the reducer", () => {
+    const tooLow = reducer(INITIAL_STATE, { type: "WINDOW_SET_OPACITY", opacity: 0.1 });
+    assert.equal(tooLow.window.opacity, 0.3);
+    const tooHigh = reducer(INITIAL_STATE, { type: "WINDOW_SET_OPACITY", opacity: 99 });
+    assert.equal(tooHigh.window.opacity, 1.0);
+    const valid = reducer(INITIAL_STATE, { type: "WINDOW_SET_OPACITY", opacity: 0.55 });
+    assert.equal(valid.window.opacity, 0.55);
+  });
 });

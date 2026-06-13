@@ -5,6 +5,7 @@ import type {
   MirrorStartRes, MirrorResizeEvt, MirrorEndedEvt,
   RecentProject,
 } from "../../main/ipc/channels";
+import { clampOpacity } from "../lib/windowPrefs";
 
 export type Action =
   | { type: "DEVICES_CHANGED"; devices: Device[] }
@@ -24,7 +25,9 @@ export type Action =
   | { type: "TOAST_UPDATE"; id: string; patch: Partial<Toast> }
   | { type: "TOAST_DISMISS"; id: string }
   | { type: "MODAL_OPEN"; modal: keyof AppState["modals"] }
-  | { type: "MODAL_CLOSE"; modal: keyof AppState["modals"] };
+  | { type: "MODAL_CLOSE"; modal: keyof AppState["modals"] }
+  | { type: "WINDOW_SET_PIN"; pinned: boolean }
+  | { type: "WINDOW_SET_OPACITY"; opacity: number };
 
 export function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
@@ -98,5 +101,9 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, modals: { ...state.modals, [action.modal]: true } };
     case "MODAL_CLOSE":
       return { ...state, modals: { ...state.modals, [action.modal]: false } };
+    case "WINDOW_SET_PIN":
+      return { ...state, window: { ...state.window, isPinned: action.pinned } };
+    case "WINDOW_SET_OPACITY":
+      return { ...state, window: { ...state.window, opacity: clampOpacity(action.opacity) } };
   }
 }
