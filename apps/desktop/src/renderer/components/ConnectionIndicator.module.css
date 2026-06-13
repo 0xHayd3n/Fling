@@ -1,6 +1,14 @@
-.indicator { display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; font-size: 11px; color: #9aa0a8; -webkit-app-region: no-drag; }
+.indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  -webkit-app-region: no-drag;
+}
 .dot { width: 8px; height: 8px; border-radius: 50%; }
-.green { background: #4ade80; box-shadow: 0 0 6px #4ade80aa; }
-.amber { background: #f59e0b; box-shadow: 0 0 6px #f59e0baa; }
-.red { background: #f87171; }
+.green { background: #4ade80; box-shadow: 0 0 8px #4ade80aa; }
+.amber { background: #f59e0b; box-shadow: 0 0 8px #f59e0baa; }
+.red { background: #f87171; box-shadow: 0 0 6px #f8717180; }
 .label { white-space: nowrap; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }

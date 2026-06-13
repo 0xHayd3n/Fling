@@ -1,12 +1,34 @@
-.controls { display: flex; -webkit-app-region: no-drag; }
-.btn {
-  background: transparent;
-  border: none;
-  color: #8a8d93;
-  width: 36px;
-  height: 40px;
-  font-size: 12px;
-  cursor: pointer;
+.controls {
+  display: flex;
+  gap: 4px;
+  -webkit-app-region: no-drag;
 }
-.btn:hover { background: #2a2d34; color: #cfd2d8; }
-.close:hover { background: #c5384a; color: white; }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--glass-bg-button);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 7px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+.btn:hover {
+  background: var(--glass-bg-button-hover);
+  border-color: var(--glass-border-strong);
+  color: var(--text-primary);
+}
+.btn:active {
+  background: var(--glass-bg-button-active);
+}
+.close:hover {
+  background: rgba(220, 56, 78, 0.85);
+  border-color: rgba(255, 100, 100, 0.5);
+  color: #ffffff;
+}

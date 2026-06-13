@@ -42,14 +42,21 @@ export interface DeployDoneEvt {
 }
 
 export interface MirrorStartReq { deviceId: string; maxResolution?: number; bitrate?: number; }
-export interface MirrorStartRes { mirrorId: string; width: number; height: number; }
+export interface MirrorStartRes {
+  mirrorId: string;
+  width: number;
+  height: number;
+  configNal: ArrayBuffer;
+  firstKeyNal: ArrayBuffer;
+  firstKeyPts: number;
+}
 export interface MirrorStopReq { mirrorId: string; }
 
 export type MirrorInputEvent =
   | { kind: "touch"; bytes: ArrayBuffer };
 
 export interface MirrorInputReq { mirrorId: string; event: MirrorInputEvent; }
-export interface MirrorFrameEvt { mirrorId: string; nal: Uint8Array; pts: number; }
+export interface MirrorFrameEvt { mirrorId: string; nal: Uint8Array; pts: number; isConfig: boolean; isKey: boolean; }
 export interface MirrorResizeEvt { mirrorId: string; width: number; height: number; }
 export interface MirrorEndedEvt { mirrorId: string; reason: string; }
 

@@ -9,72 +9,168 @@ export function MirrorCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const decoderRef = useRef<VideoDecoder | null>(null);
   const lbRef = useRef({ offsetX: 0, offsetY: 0, renderedW: 0, renderedH: 0 });
-  const sawKeyRef = useRef(false);
+  const configNalRef = useRef<Uint8Array | null>(null);
+  const sawIdrRef = useRef(false);
+  const lastFrameBitmapRef = useRef<ImageBitmap | null>(null);
+  const deviceDimsRef = useRef({ w: 0, h: 0 });
 
   useEffect(() => {
     if (state.mirror.status !== "running") return;
-    sawKeyRef.current = false;
+    configNalRef.current = state.mirror.configNal;
+    sawIdrRef.current = false;
+    deviceDimsRef.current = { w: state.mirror.width, h: state.mirror.height };
+
+    const ensureBackingStore = (c: HTMLCanvasElement): boolean => {
+      const dpr = window.devicePixelRatio || 1;
+      const wantW = Math.max(1, Math.floor(c.clientWidth * dpr));
+      const wantH = Math.max(1, Math.floor(c.clientHeight * dpr));
+      if (c.width !== wantW || c.height !== wantH) {
+        c.width = wantW;
+        c.height = wantH;
+        return true;
+      }
+      return false;
+    };
+
+    const paint = (c: HTMLCanvasElement, source: CanvasImageSource) => {
+      const ctx = c.getContext("2d");
+      if (!ctx) return;
+      const { w: devW, h: devH } = deviceDimsRef.current;
+      const lb = computeLetterbox(c.width, c.height, devW || 1, devH || 1);
+      lbRef.current = lb;
+      ctx.fillStyle = "#0c0d10";
+      ctx.fillRect(0, 0, c.width, c.height);
+      if (lb.renderedW > 0 && lb.renderedH > 0) {
+        ctx.drawImage(source, lb.offsetX, lb.offsetY, lb.renderedW, lb.renderedH);
+      }
+    };
+
     const decoder = new VideoDecoder({
       output: (frame) => {
         const c = canvasRef.current;
         if (!c) { frame.close(); return; }
-        const ctx = c.getContext("2d");
-        if (!ctx) { frame.close(); return; }
-        const lb = lbRef.current;
-        ctx.fillStyle = "#0c0d10";
-        ctx.fillRect(0, 0, c.width, c.height);
-        ctx.drawImage(frame, lb.offsetX, lb.offsetY, lb.renderedW, lb.renderedH);
-        frame.close();
+        ensureBackingStore(c);
+        // Cache an ImageBitmap of the frame so resize events can repaint without
+        // waiting for the next decode. createImageBitmap is async, but we paint
+        // the VideoFrame directly first for minimum latency.
+        paint(c, frame);
+        createImageBitmap(frame).then((bm) => {
+          if (lastFrameBitmapRef.current) lastFrameBitmapRef.current.close();
+          lastFrameBitmapRef.current = bm;
+          frame.close();
+        }).catch(() => frame.close());
       },
       error: (e) => console.error("[decoder]", e),
     });
-    decoder.configure({ codec: "avc1.42E01E" });
+    // Configure for High Profile @ Level 4.0 — covers any 1080p H.264 stream
+    // including Baseline / Main / High since WebCodecs decoders are typically
+    // lenient about accepting lower profiles than configured.
+    decoder.configure({ codec: "avc1.640028", optimizeForLatency: true });
     decoderRef.current = decoder;
+
+    // Prime the decoder with config + first IDR captured before the start
+    // response. Without this we never see a key frame and all subsequent
+    // delta frames are dropped.
+    if (state.mirror.configNal && state.mirror.firstKeyNal) {
+      const cfg = state.mirror.configNal;
+      const idr = state.mirror.firstKeyNal;
+      const combined = new Uint8Array(cfg.length + idr.length);
+      combined.set(cfg, 0);
+      combined.set(idr, cfg.length);
+      try {
+        decoder.decode(new EncodedVideoChunk({ type: "key", timestamp: state.mirror.firstKeyPts, data: combined }));
+        sawIdrRef.current = true;
+        console.log(`[mirror] primed decoder with config(${cfg.length}B) + idr(${idr.length}B) at pts=${state.mirror.firstKeyPts}`);
+      } catch (err) {
+        console.error("[decoder.decode] prime failed", err);
+      }
+    }
+
+    let framesReceived = 0;
+    let framesDecoded = 0;
+    let framesDropped = 0;
+    const tick = () => {
+      console.log(`[mirror] received=${framesReceived} decoded=${framesDecoded} dropped=${framesDropped} sawIdr=${sawIdrRef.current} hasConfig=${!!configNalRef.current} decoderState=${decoder.state}`);
+    };
+    const statsTimer = setInterval(tick, 1000);
 
     const offFrame = window.fling.on.mirrorFrame((e) => {
       if (e.mirrorId !== state.mirror.mirrorId) return;
-      // Detect IDR (key) frames so the decoder doesn't error on non-keyframe leadin.
-      // H.264 NAL unit type lives in the low 5 bits of the first byte after start code.
-      // scrcpy frames are Annex-B; first NAL is typically right after a 4-byte start code.
-      let nalType = 0;
-      const nal = e.nal;
-      // Walk past leading zeros to find the start-code, then read the next byte for NAL type.
-      let i = 0;
-      while (i < nal.length && nal[i] === 0) i++;
-      if (i < nal.length && nal[i] === 1) {
-        if (i + 1 < nal.length) nalType = nal[i + 1]! & 0x1f;
-      } else if (i < nal.length) {
-        nalType = nal[i]! & 0x1f;
+      framesReceived++;
+      if (e.isConfig) {
+        configNalRef.current = e.nal;
+        return;
       }
-      const isKey = nalType === 5 || nalType === 7 || nalType === 8;
-      if (!sawKeyRef.current && !isKey) return;
-      if (isKey) sawKeyRef.current = true;
+      if (!sawIdrRef.current && !e.isKey) { framesDropped++; return; }
+      let data = e.nal;
+      if (e.isKey && configNalRef.current) {
+        const cfg = configNalRef.current;
+        const combined = new Uint8Array(cfg.length + data.length);
+        combined.set(cfg, 0);
+        combined.set(data, cfg.length);
+        data = combined;
+      }
+      if (e.isKey) sawIdrRef.current = true;
       try {
         decoder.decode(new EncodedVideoChunk({
-          type: isKey ? "key" : "delta",
+          type: e.isKey ? "key" : "delta",
           timestamp: e.pts,
-          data: e.nal,
+          data,
         }));
+        framesDecoded++;
       } catch (err) {
         console.error("[decoder.decode]", err);
       }
     });
-
-    return () => { offFrame(); decoder.close(); decoderRef.current = null; };
+    return () => {
+      clearInterval(statsTimer);
+      offFrame();
+      decoder.close();
+      decoderRef.current = null;
+      if (lastFrameBitmapRef.current) {
+        lastFrameBitmapRef.current.close();
+        lastFrameBitmapRef.current = null;
+      }
+    };
   }, [state.mirror.status, state.mirror.mirrorId]);
+
+  // Track device dimensions in a ref so the resize-repaint effect doesn't
+  // need to be torn down when they change.
+  useEffect(() => {
+    deviceDimsRef.current = { w: state.mirror.width, h: state.mirror.height };
+  }, [state.mirror.width, state.mirror.height]);
 
   useEffect(() => {
     const c = canvasRef.current;
     if (!c) return;
+    let raf = 0;
+    const repaint = () => {
+      raf = 0;
+      const ctx = c.getContext("2d");
+      if (!ctx) return;
+      const dpr = window.devicePixelRatio || 1;
+      const wantW = Math.max(1, Math.floor(c.clientWidth * dpr));
+      const wantH = Math.max(1, Math.floor(c.clientHeight * dpr));
+      if (c.width !== wantW || c.height !== wantH) {
+        c.width = wantW;
+        c.height = wantH;
+      }
+      const { w: devW, h: devH } = deviceDimsRef.current;
+      const lb = computeLetterbox(c.width, c.height, devW || 1, devH || 1);
+      lbRef.current = lb;
+      ctx.fillStyle = "#0c0d10";
+      ctx.fillRect(0, 0, c.width, c.height);
+      const bm = lastFrameBitmapRef.current;
+      if (bm && lb.renderedW > 0 && lb.renderedH > 0) {
+        ctx.drawImage(bm, lb.offsetX, lb.offsetY, lb.renderedW, lb.renderedH);
+      }
+    };
     const ro = new ResizeObserver(() => {
-      const dpr = window.devicePixelRatio;
-      c.width = c.clientWidth * dpr;
-      c.height = c.clientHeight * dpr;
-      lbRef.current = computeLetterbox(c.width, c.height, state.mirror.width, state.mirror.height);
+      if (raf === 0) raf = requestAnimationFrame(repaint);
     });
     ro.observe(c);
-    return () => ro.disconnect();
-  }, [state.mirror.width, state.mirror.height]);
+    return () => { ro.disconnect(); if (raf) cancelAnimationFrame(raf); };
+  }, []);
 
   function devicePos(e: React.PointerEvent<HTMLCanvasElement>) {
     const c = canvasRef.current;

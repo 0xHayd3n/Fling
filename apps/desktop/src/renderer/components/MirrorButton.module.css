@@ -1,2 +1,2 @@
-.btn {}
-.chev { color: #8a8d93; font-size: 9px; margin-left: 2px; }
+.btn { /* inherits ToolbarButton */ }
+.chev { display: inline-flex; opacity: 0.55; }

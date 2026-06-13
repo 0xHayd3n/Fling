@@ -15,11 +15,12 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 720,
     height: 540,
-    minWidth: 480,
+    minWidth: 320,
     minHeight: 360,
     frame: false,
     titleBarStyle: "hidden",
-    backgroundColor: "#181a1f",
+    transparent: true,
+    backgroundColor: "#00000000",
     show: false,
     webPreferences: {
       contextIsolation: true,

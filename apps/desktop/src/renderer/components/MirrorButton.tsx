@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { useFling } from "../state/FlingContext";
 import { ToolbarButton } from "./ToolbarButton";
+import { PhoneIcon, ChevronDownIcon } from "./Icons";
 import styles from "./MirrorButton.module.css";
 
 const LONG_PRESS_MS = 300;
@@ -59,8 +60,10 @@ export function MirrorButton() {
       onPointerUp={() => { if (pressTimer.current) { clearTimeout(pressTimer.current); pressTimer.current = null; } }}
       onPointerLeave={() => { if (pressTimer.current) { clearTimeout(pressTimer.current); pressTimer.current = null; } }}
       title="Mirror (right-click for device list)"
+      aria-label="Mirror"
     >
-      Mirror <span className={styles.chev}>▾</span>
+      <PhoneIcon />
+      <span className={styles.chev}><ChevronDownIcon /></span>
     </ToolbarButton>
   );
 }

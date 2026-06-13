@@ -13,6 +13,9 @@ export interface AppState {
     width: number;
     height: number;
     status: "off" | "starting" | "running";
+    configNal: Uint8Array | null;
+    firstKeyNal: Uint8Array | null;
+    firstKeyPts: number;
   };
   deploy: { runId: string | null; status: "idle" | "running"; toastId: string | null };
   toasts: Toast[];
@@ -34,7 +37,7 @@ export const INITIAL_STATE: AppState = {
   devices: [],
   selectedDeviceId: null,
   adbOk: true,
-  mirror: { mirrorId: null, deviceId: null, width: 0, height: 0, status: "off" },
+  mirror: { mirrorId: null, deviceId: null, width: 0, height: 0, status: "off", configNal: null, firstKeyNal: null, firstKeyPts: 0 },
   deploy: { runId: null, status: "idle", toastId: null },
   toasts: [],
   modals: { devicePicker: false, recentProjects: false, settings: false, pairing: false },

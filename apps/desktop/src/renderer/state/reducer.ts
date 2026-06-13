@@ -48,14 +48,17 @@ export function reducer(state: AppState, action: Action): AppState {
           width: action.res.width,
           height: action.res.height,
           status: "running",
+          configNal: new Uint8Array(action.res.configNal),
+          firstKeyNal: new Uint8Array(action.res.firstKeyNal),
+          firstKeyPts: action.res.firstKeyPts,
         },
       };
     case "MIRROR_STOPPED":
-      return { ...state, mirror: { mirrorId: null, deviceId: null, width: 0, height: 0, status: "off" } };
+      return { ...state, mirror: { mirrorId: null, deviceId: null, width: 0, height: 0, status: "off", configNal: null, firstKeyNal: null, firstKeyPts: 0 } };
     case "MIRROR_RESIZED":
       return { ...state, mirror: { ...state.mirror, width: action.evt.width, height: action.evt.height } };
     case "MIRROR_ENDED":
-      return { ...state, mirror: { mirrorId: null, deviceId: null, width: 0, height: 0, status: "off" } };
+      return { ...state, mirror: { mirrorId: null, deviceId: null, width: 0, height: 0, status: "off", configNal: null, firstKeyNal: null, firstKeyPts: 0 } };
     case "DEPLOY_STARTED":
       return { ...state, deploy: { runId: action.evt.runId, status: "running", toastId: action.toastId } };
     case "DEPLOY_DONE":

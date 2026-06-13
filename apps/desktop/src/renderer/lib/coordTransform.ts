@@ -4,6 +4,14 @@ export function computeLetterbox(
   canvasW: number, canvasH: number, deviceW: number, deviceH: number,
 ): Letterbox {
   if (deviceW === 0 || deviceH === 0) return { offsetX: 0, offsetY: 0, renderedW: canvasW, renderedH: canvasH };
+  // When canvas aspect matches device aspect (within tolerance), fill the canvas
+  // entirely instead of letterboxing. This eliminates 1-pixel rounding bars
+  // when the window aspect is already locked to the device.
+  const canvasAspect = canvasW / canvasH;
+  const deviceAspect = deviceW / deviceH;
+  if (Math.abs(canvasAspect - deviceAspect) / deviceAspect < 0.05) {
+    return { offsetX: 0, offsetY: 0, renderedW: canvasW, renderedH: canvasH };
+  }
   const scale = Math.min(canvasW / deviceW, canvasH / deviceH);
   const renderedW = Math.floor(deviceW * scale);
   const renderedH = Math.floor(deviceH * scale);

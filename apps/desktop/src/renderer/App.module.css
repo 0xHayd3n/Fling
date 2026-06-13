@@ -1,2 +1,29 @@
-.app { display: flex; flex-direction: column; height: 100vh; background: #181a1f; }
-.canvas { flex: 1; display: flex; flex-direction: column; background: #0c0d10; overflow: hidden; }
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 8px;
+  gap: 8px;
+  background: transparent;
+  box-sizing: border-box;
+}
+.canvas {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  border-radius: 28px;
+  background: var(--canvas-bg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+.projectLabel {
+  color: var(--text-tertiary);
+  font-size: 11px;
+  margin-left: 6px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  -webkit-app-region: no-drag;
+}
