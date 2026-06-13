@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] — 2026-06-14
+
+### Fixed
+- Published tarball now ships `README.md` and `LICENSE`. The 0.6.0 publish silently dropped both because they only existed at the repo root, not under `packages/mcp-server/`. The npm package page now renders documentation instead of showing only the `description` field.
+
 ## [0.6.0] — 2026-06-14
 
 Initial public release on npm and GitHub.
@@ -44,5 +49,6 @@ Wireless ADB pairing (cable-free dev setup):
 - Server version is now derived from `package.json` at runtime instead of hardcoded.
 - Repository at https://github.com/0xHayd3n/Fling, package published under the `@0xhayd3n` scope.
 
-[Unreleased]: https://github.com/0xHayd3n/Fling/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/0xHayd3n/Fling/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/0xHayd3n/Fling/releases/tag/v0.6.1
 [0.6.0]: https://github.com/0xHayd3n/Fling/releases/tag/v0.6.0

@@ -1,6 +1,6 @@
 {
   "name": "@0xhayd3n/fling-desktop",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Fling Desktop — minimalist Android mirror GUI for the Fling MCP server.",
   "private": true,
   "main": ".vite/build/main.js",
