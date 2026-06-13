@@ -253,6 +253,42 @@ This is what gets called when someone says *"run this on my phone."*
 
 ---
 
+## Use with Crabby (CDP audits on a real device)
+
+Fling can expose your app's WebView over Chrome DevTools Protocol so [Crabby](https://github.com/0xHayd3n/Crabby) (or any CDP-aware tool) can audit it on a real Android device — useful for Capacitor, Ionic, Cordova, and React Native WebView apps.
+
+**One-shot deploy + expose:**
+
+```
+deploy_and_run({ expose_cdp: true })
+```
+
+The response includes a `cdp` field with `cdp_url` and `ws_url` you can pass straight to Crabby's `connect` tool.
+
+**Expose without re-deploying** (e.g., re-audit after the AI suggests changes):
+
+```
+forward_cdp({ package_name: "com.example.app" })
+```
+
+**Prerequisite — your WebView must be debuggable.** In the app's WebView setup:
+
+```kotlin
+WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
+```
+
+Capacitor and Ionic enable this by default in debug builds. Raw Android+WebView apps must opt in. If Fling can find your app's PIDs but no `webview_devtools_remote_<pid>` socket, you'll get `CDP_WEBVIEW_NOT_DEBUGGABLE` with this exact hint.
+
+**Audit Chrome on the phone instead** (for testing a deployed web URL on a real device):
+
+```
+forward_cdp({ prefer: "chrome" })
+```
+
+Forwarded ports stay alive for the lifetime of the Fling server and are torn down on `SIGINT`/exit.
+
+---
+
 ## Development
 
 ```
