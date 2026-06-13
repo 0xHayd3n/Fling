@@ -8,12 +8,30 @@ import { resolveBuildCommand, runBuild } from "../gradle.js";
 import { toolErrorFrom } from "../toolResult.js";
 import { performInstall } from "./install-app.js";
 import { performLaunch, validateActivity, validatePackage } from "./launch-app.js";
+import { exposeCdp, type ExposeCdpResult } from "../cdp.js";
+import { globalCdpForwards } from "../cdpForwards.js";
 
 interface StepResult {
   name: string;
   success: boolean;
   duration_ms: number;
   message: string;
+}
+
+export type CdpOutcome =
+  | { ok: true; value: ExposeCdpResult }
+  | { ok: false; error: unknown };
+
+export function buildCdpFieldFromOutcome(outcome: CdpOutcome) {
+  if (outcome.ok) {
+    return { success: true as const, ...outcome.value };
+  }
+  const err = outcome.error;
+  if (err instanceof FlingError) {
+    return { success: false as const, error_code: err.code, message: err.message };
+  }
+  const message = err instanceof Error ? err.message : String(err);
+  return { success: false as const, error_code: "UNKNOWN", message };
 }
 
 async function timedStep<T>(
@@ -69,6 +87,12 @@ export function registerDeployAndRun(server: McpServer): void {
           .describe("Target device serial (required when multiple ready devices are connected)."),
         reinstall: z.boolean().optional(),
         grant_runtime_permissions: z.boolean().optional(),
+        expose_cdp: z
+          .boolean()
+          .optional()
+          .describe(
+            "After a successful launch, also expose the app's WebView over CDP and return a Crabby-compatible connect URL. Default false."
+          ),
       },
       outputSchema: {
         success: z.boolean(),
@@ -83,6 +107,29 @@ export function registerDeployAndRun(server: McpServer): void {
             message: z.string(),
           })
         ),
+        cdp: z
+          .union([
+            z.object({
+              success: z.literal(true),
+              cdp_url: z.string(),
+              ws_url: z.string().optional(),
+              target: z.object({
+                type: z.enum(["webview", "chrome"]),
+                title: z.string().optional(),
+                url: z.string().optional(),
+                pid: z.number().int().optional(),
+              }),
+              local_port: z.number().int(),
+              socket_name: z.string(),
+              device_id: z.string(),
+            }),
+            z.object({
+              success: z.literal(false),
+              error_code: z.string(),
+              message: z.string(),
+            }),
+          ])
+          .optional(),
       },
       annotations: {
         readOnlyHint: false,
@@ -180,6 +227,26 @@ export function registerDeployAndRun(server: McpServer): void {
           throw launchStep.error ?? new FlingError("LAUNCH_FAILED", launchStep.step.message);
         }
 
+        let cdpField: ReturnType<typeof buildCdpFieldFromOutcome> | undefined;
+        if (input.expose_cdp) {
+          let outcome: CdpOutcome;
+          try {
+            const value = await exposeCdp(
+              {
+                deviceArgs: deviceStep.value!.args,
+                deviceId: serial!,
+                packageName: pkg!,
+                prefer: "webview",
+              },
+              globalCdpForwards
+            );
+            outcome = { ok: true, value };
+          } catch (cdpErr) {
+            outcome = { ok: false, error: cdpErr };
+          }
+          cdpField = buildCdpFieldFromOutcome(outcome);
+        }
+
         const totalMs = steps.reduce((acc, s) => acc + s.duration_ms, 0);
         const summary = [
           `✓ Deployed ${pkg} to ${serial} in ${(totalMs / 1000).toFixed(1)}s`,
@@ -194,6 +261,7 @@ export function registerDeployAndRun(server: McpServer): void {
             apk_path: apkPath,
             package_name: pkg,
             steps,
+            cdp: cdpField,
           },
         };
       } catch (err) {
