@@ -78,6 +78,32 @@ export function PinIcon({ size }: IconProps) {
   );
 }
 
+export function PowerIcon({ size = 18 }: IconProps) {
+  return (
+    <svg {...base(size)}>
+      <path d="M12 2v10" />
+      <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+    </svg>
+  );
+}
+
+export function PlusIcon({ size = 18 }: IconProps) {
+  return (
+    <svg {...base(size)}>
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </svg>
+  );
+}
+
+export function MinusIcon({ size = 18 }: IconProps) {
+  return (
+    <svg {...base(size)}>
+      <path d="M5 12h14" />
+    </svg>
+  );
+}
+
 export function PinFilledIcon({ size = 16 }: IconProps) {
   return (
     <svg

@@ -91,7 +91,7 @@ export function registerIpcHandlers(opts: {
     return {};
   });
   ipcMain.handle(Channels.mirrorInput, async (_e, req: MirrorInputReq) => {
-    if (req.event && req.event.kind === "touch" && req.event.bytes) {
+    if (req.event && (req.event.kind === "touch" || req.event.kind === "key") && req.event.bytes) {
       opts.scrcpy.send(req.mirrorId, new Uint8Array(req.event.bytes));
     }
   });

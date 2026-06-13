@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./App.module.css";
 import { FlingProvider, useFling } from "./state/FlingContext";
 import { useMirrorControl } from "./state/useMirrorControl";
@@ -12,7 +12,11 @@ import { MirrorCanvas } from "./components/MirrorCanvas";
 import { DevicePickerPopover } from "./components/DevicePickerPopover";
 import { PinButton } from "./components/PinButton";
 import { OpacityPopover } from "./components/OpacityPopover";
+import { SideControls } from "./components/SideControls";
 import { SettingsIcon, FolderIcon } from "./components/Icons";
+
+// Pixels from the right edge of the shell that count as "right-side hover."
+const RIGHT_HOVER_BAND = 90;
 
 function Body() {
   const { state } = useFling();
@@ -20,6 +24,10 @@ function Body() {
   // Tracks the serial we've already auto-started for. Reset when no ready
   // device is present so disconnect → reconnect re-triggers auto-mirror.
   const autoStartedSerialRef = useRef<string | null>(null);
+  // Right-side hover state — drives the fade-in of SideControls. Updated
+  // by onMouseMove on the shell when pointer is within RIGHT_HOVER_BAND
+  // of the right edge; cleared on mouseleave.
+  const [rightHover, setRightHover] = useState(false);
   // Keep canvas mounted during stopping/starting so the user doesn't see the
   // StateHero flash through. Only "off" and "error" go to the hero.
   const mirroring = state.mirror.status === "running"
@@ -70,8 +78,16 @@ function Body() {
               ? ({ "--phone-aspect": `${state.mirror.width} / ${state.mirror.height}` } as React.CSSProperties)
               : undefined
           }
+          onMouseMove={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const fromRight = rect.right - e.clientX;
+            const shouldShow = fromRight >= 0 && fromRight < RIGHT_HOVER_BAND;
+            if (shouldShow !== rightHover) setRightHover(shouldShow);
+          }}
+          onMouseLeave={() => { if (rightHover) setRightHover(false); }}
         >
           {mirroring ? <MirrorCanvas /> : <StateHero />}
+          {mirroring && <SideControls visible={rightHover} />}
         </div>
       </div>
       <DevicePickerPopover />

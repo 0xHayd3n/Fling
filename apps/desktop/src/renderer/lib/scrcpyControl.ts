@@ -1,7 +1,39 @@
+const TYPE_KEYCODE = 0;
 const TYPE_TOUCH = 2;
 const ACTION_DOWN = 0;
 const ACTION_UP = 1;
 const ACTION_MOVE = 2;
+
+// Android KeyEvent constants — matches android.view.KeyEvent values.
+export const KEYCODE_POWER = 26;
+export const KEYCODE_VOLUME_UP = 24;
+export const KEYCODE_VOLUME_DOWN = 25;
+
+/**
+ * Encode a scrcpy 2.7 INJECT_KEYCODE control message.
+ * Layout (14 bytes total): type(1) action(1) keycode(i32 BE) repeat(i32 BE) metaState(i32 BE).
+ * Single physical "tap" of a key requires two messages: down then up.
+ */
+export function encodeKeyEvent(action: "down" | "up", keycode: number): Uint8Array {
+  const buf = new ArrayBuffer(1 + 1 + 4 + 4 + 4);
+  const view = new DataView(buf);
+  view.setUint8(0, TYPE_KEYCODE);
+  view.setUint8(1, action === "down" ? ACTION_DOWN : ACTION_UP);
+  view.setInt32(2, keycode, false);
+  view.setInt32(6, 0, false); // repeat
+  view.setInt32(10, 0, false); // metaState
+  return new Uint8Array(buf);
+}
+
+/** Convenience: concatenated down + up bytes for a single key tap. */
+export function encodeKeyTap(keycode: number): Uint8Array {
+  const down = encodeKeyEvent("down", keycode);
+  const up = encodeKeyEvent("up", keycode);
+  const combined = new Uint8Array(down.length + up.length);
+  combined.set(down, 0);
+  combined.set(up, down.length);
+  return combined;
+}
 
 /**
  * Encode a scrcpy 2.7 INJECT_TOUCH_EVENT control message.
