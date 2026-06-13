@@ -24,7 +24,12 @@ export type FlingErrorCode =
   | "ADB_CONNECT_FAILED"
   | "MDNS_UNAVAILABLE"
   | "UNKNOWN_SERVICE"
-  | "PAIRING_IN_PROGRESS";
+  | "PAIRING_IN_PROGRESS"
+  | "CDP_APP_NOT_RUNNING"
+  | "CDP_NO_TARGETS"
+  | "CDP_WEBVIEW_NOT_DEBUGGABLE"
+  | "CDP_FORWARD_FAILED"
+  | "CDP_PROBE_FAILED";
 
 export class FlingError extends Error {
   readonly code: FlingErrorCode;
