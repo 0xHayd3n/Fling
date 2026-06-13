@@ -39,6 +39,10 @@ export class CdpForwards {
     return this.slots.get(this.key(deviceId, socket))?.entry;
   }
 
+  remove(deviceId: string, socket: string): void {
+    this.slots.delete(this.key(deviceId, socket));
+  }
+
   async teardownAll(): Promise<void> {
     const all = [...this.slots.values()];
     this.slots.clear();

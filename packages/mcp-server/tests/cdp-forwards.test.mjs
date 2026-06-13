@@ -45,4 +45,13 @@ describe("CdpForwards", () => {
     await registry.teardownAll();
     assert.deepEqual(torn, [2]);
   });
+
+  it("remove deletes an entry by device+socket without running its teardown", async () => {
+    const torn = [];
+    registry.register({ deviceId: "a", socket: "s", port: 1 }, async () => { torn.push(1); });
+    registry.remove("a", "s");
+    assert.equal(registry.get("a", "s"), undefined);
+    await registry.teardownAll();
+    assert.deepEqual(torn, []);
+  });
 });

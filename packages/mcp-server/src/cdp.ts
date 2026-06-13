@@ -214,12 +214,12 @@ export interface ExposeCdpResult {
   device_id: string;
 }
 
-const TARGET_FAILURE_HINTS: Record<FlingErrorCode, string> = {
+const TARGET_FAILURE_HINTS: Partial<Record<FlingErrorCode, string>> = {
   CDP_WEBVIEW_NOT_DEBUGGABLE:
     "Add WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG) to your WebView's onCreate. Capacitor/Ionic enable this by default in debug builds; raw Android+WebView apps must opt in. Rebuild and try again.",
   CDP_NO_TARGETS:
     "No debuggable Chromium target found on the device. Verify the device is debuggable and the target app/Chrome is running.",
-} as Record<FlingErrorCode, string>;
+};
 
 export async function exposeCdp(
   opts: ExposeCdpOpts,
@@ -260,6 +260,7 @@ export async function exposeCdp(
   try {
     await probeVersion(localPort);
   } catch (err) {
+    registry.remove(opts.deviceId, target.name);
     await teardownForward(opts.deviceArgs, localPort);
     throw err;
   }
