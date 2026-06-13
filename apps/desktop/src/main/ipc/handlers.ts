@@ -110,6 +110,12 @@ export function registerIpcHandlers(opts: {
     const win = opts.getWindow();
     win?.webContents.send(Channels.devicesChanged, { devices });
   });
+  // Required: EventEmitter throws an uncaught exception if 'error' is emitted
+  // with no listener. listDevices() can fail with ADB-not-found, ADB daemon
+  // crash, or a transient pipe error — without this the main process dies.
+  opts.watcher.on("error", (err: unknown) => {
+    process.stderr.write(`[deviceWatcher] poll error: ${err instanceof Error ? err.message : String(err)}\n`);
+  });
 
   opts.scrcpy.on("frame", (mirrorId: string, nal: Uint8Array, pts: number, isConfig: boolean, isKey: boolean) => {
     opts.getWindow()?.webContents.send(Channels.mirrorFrame, { mirrorId, nal, pts, isConfig, isKey });
