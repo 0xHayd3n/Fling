@@ -5,8 +5,13 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "setup": "npm install && npm install --prefix packages/mcp-server && npm install --prefix apps/desktop --install-links",
+    "sync:desktop": "npm install --prefix apps/desktop --install-links",
     "build": "npm run build --prefix packages/mcp-server",
-    "test": "npm test --prefix packages/mcp-server",
+    "test": "npm test --prefix packages/mcp-server && npm test --prefix apps/desktop",
+    "test:mcp": "npm test --prefix packages/mcp-server",
+    "test:desktop": "npm test --prefix apps/desktop",
+    "lint:desktop": "npm run lint --prefix apps/desktop",
     "smoke": "npm run smoke --prefix packages/mcp-server",
     "clean": "npm run clean --prefix packages/mcp-server"
   },
