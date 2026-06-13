@@ -19,7 +19,7 @@ Fling wraps `adb` (the Android Debug Bridge) behind the [Model Context Protocol]
 | Category | Tools |
 |---|---|
 | Build & deploy | `list_devices`, `build_app`, `install_app`, `launch_app`, `stop_app`, `uninstall_app`, `read_logs`, `screenshot`, `deploy_and_run` |
-| UI navigation | `dump_ui`, `tap_by_text`, `tap_by_resource_id`, `tap_by_content_desc`, `long_press_by_text`, `tap_text_verified`, `find_on_screen`, `wait_for`, `scroll_until_visible`, `dismiss_dialog` |
+| UI navigation | `dump_ui`, `tap_by_text`, `tap_by_resource_id`, `tap_by_content_desc`, `tap_text_verified`, `find_on_screen`, `wait_for`, `scroll_until_visible`, `dismiss_dialog` |
 | Intent shortcuts | `open_setting` |
 | Composite probes | `device_state`, `screenshot_with_ui`, `launch_and_wait`, `deploy_and_run` |
 | Wireless pairing | `start_pair_qr`, `wait_for_pair` |
@@ -212,10 +212,9 @@ Semantic primitives that fold `dump_ui + filter + input_tap` round-trips into si
 | Tool | One-liner |
 |---|---|
 | `dump_ui` | Capture the visible Android view hierarchy via `uiautomator dump`. Returns a flat node list with text, content-desc, resource-id, bounds, and pre-computed centers. Defaults to `interactive_only: true`. |
-| `tap_by_text` | Tap the smallest clickable element containing the given visible text. Optional `scroll_into_view` swipes up to 5 times searching for the element. |
+| `tap_by_text` | Tap the smallest clickable element containing the given visible text. Optional `scroll_into_view` swipes up to 5 times searching for the element. Pass `hold_ms` to long-press for that many milliseconds instead of tapping (for context menus and drag handles). |
 | `tap_by_resource_id` | Tap by exact Android resource id — most robust when the id is known. |
 | `tap_by_content_desc` | Tap by accessibility label — used for icon buttons with no visible text. |
-| `long_press_by_text` | Same matching as `tap_by_text` but holds the touch for `duration_ms` (default 1000). For context menus. |
 | `tap_text_verified` | Atomic tap-and-check: find a text node, tap its center, then poll the UI for an `expect` substring to appear or a `gone` substring to disappear. Returns `{tapped, verified, before_node}`. |
 | `wait_for` | Poll `dump_ui` until a selector matches, or throw `UI_WAIT_TIMEOUT`. Use after app launches and async transitions. |
 | `scroll_until_visible` | Swipe up/down up to `max_scrolls` times searching for an element. Returns `{found: false}` when exhausted — not an error. |

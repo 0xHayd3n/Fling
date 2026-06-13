@@ -18,6 +18,30 @@ export function buildTapArgs(
   return [...deviceArgs, "shell", "input", "tap", String(x), String(y)];
 }
 
+/**
+ * Build the adb argv for a long-press at (x, y) held for `durationMs`. A
+ * long-press is a zero-length swipe — start and end coordinates are
+ * identical; only the duration matters.
+ */
+export function buildLongPressArgs(
+  deviceArgs: string[],
+  x: number,
+  y: number,
+  durationMs: number
+): string[] {
+  return [
+    ...deviceArgs,
+    "shell",
+    "input",
+    "swipe",
+    String(x),
+    String(y),
+    String(x),
+    String(y),
+    String(durationMs),
+  ];
+}
+
 export interface TapTarget {
   tap_x: number;
   tap_y: number;
@@ -65,16 +89,17 @@ export function registerTapByText(server: McpServer): void {
   server.registerTool(
     "tap_by_text",
     {
-      title: "Tap a UI element by visible text",
+      title: "Tap (or long-press) a UI element by visible text",
       description:
         "Dump UI, find the first node whose text matches, and tap the smallest " +
-        "clickable container whose bounds contain it. Folds dump_ui + filter + " +
-        "input_tap into one call. " +
+        "clickable container whose bounds contain it — folding dump + filter + " +
+        "input dispatch into one call. " +
         "Substring matching is case-sensitive by default; pass exact:true for " +
         "strict equality. With scroll_into_view:true, performs up to 5 down-swipes " +
         "if the element is not currently visible. " +
-        "Prefer over input_tap when you can name the target by visible text. For " +
-        "icon buttons with no text, use tap_by_content_desc. For non-localized " +
+        "Pass hold_ms to long-press for the given duration instead of tapping — " +
+        "useful for context menus and drag handles. " +
+        "For icon buttons with no text, use tap_by_content_desc. For non-localized " +
         "or robust targeting, prefer tap_by_resource_id.",
       inputSchema: {
         text: z.string().min(1).describe("Visible text to match."),
@@ -89,6 +114,15 @@ export function registerTapByText(server: McpServer): void {
           .default(false)
           .describe(
             "If the element is not visible, swipe down up to 5 times searching for it."
+          ),
+        hold_ms: z
+          .number()
+          .int()
+          .positive()
+          .max(10_000)
+          .optional()
+          .describe(
+            "If set, long-press for this many milliseconds instead of tapping. Range 1–10000."
           ),
         device_id: deviceIdInput,
       },
@@ -106,6 +140,7 @@ export function registerTapByText(server: McpServer): void {
         scrolled_into_view: z.boolean(),
         candidates_count: z.number().int().nonnegative(),
         fell_back_to_match: z.boolean(),
+        hold_ms: z.number().int().positive().optional(),
       },
       annotations: {
         readOnlyHint: false,
@@ -114,7 +149,7 @@ export function registerTapByText(server: McpServer): void {
         openWorldHint: false,
       },
     },
-    async ({ text, exact, scroll_into_view, device_id }) => {
+    async ({ text, exact, scroll_into_view, hold_ms, device_id }) => {
       try {
         const { args: deviceArgs, serial } = await resolveDeviceArgs(device_id);
 
@@ -145,9 +180,16 @@ export function registerTapByText(server: McpServer): void {
           );
         }
 
-        await runAdb(buildTapArgs(deviceArgs, target.tap_x, target.tap_y));
+        if (hold_ms) {
+          await runAdb(
+            buildLongPressArgs(deviceArgs, target.tap_x, target.tap_y, hold_ms)
+          );
+        } else {
+          await runAdb(buildTapArgs(deviceArgs, target.tap_x, target.tap_y));
+        }
 
-        const msg = `Tapped "${target.matched_text}" at (${target.tap_x}, ${target.tap_y}) on ${serial}${target.candidates_count > 1 ? ` [${target.candidates_count} candidates; took first]` : ""}.`;
+        const verb = hold_ms ? `Long-pressed (${hold_ms}ms)` : "Tapped";
+        const msg = `${verb} "${target.matched_text}" at (${target.tap_x}, ${target.tap_y}) on ${serial}${target.candidates_count > 1 ? ` [${target.candidates_count} candidates; took first]` : ""}.`;
 
         return {
           content: [{ type: "text" as const, text: msg }],
@@ -160,6 +202,7 @@ export function registerTapByText(server: McpServer): void {
             scrolled_into_view: scrolled,
             candidates_count: target.candidates_count,
             fell_back_to_match: target.fell_back_to_match,
+            hold_ms,
           },
         };
       } catch (err) {

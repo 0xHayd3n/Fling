@@ -17,7 +17,6 @@ import { registerStopApp } from "./tools/stop-app.js";
 import { registerTapByContentDesc } from "./tools/tap-by-content-desc.js";
 import { registerTapByResourceId } from "./tools/tap-by-resource-id.js";
 import { registerTapByText } from "./tools/tap-by-text.js";
-import { registerLongPressByText } from "./tools/long-press-by-text.js";
 import { registerDismissDialog } from "./tools/dismiss-dialog.js";
 import { registerUninstallApp } from "./tools/uninstall-app.js";
 import { registerWaitFor } from "./tools/wait-for.js";
@@ -58,7 +57,6 @@ async function main() {
   registerTapByText(server);
   registerTapByResourceId(server);
   registerTapByContentDesc(server);
-  registerLongPressByText(server);
   registerDismissDialog(server);
   registerWaitFor(server);
   registerScrollUntilVisible(server);
