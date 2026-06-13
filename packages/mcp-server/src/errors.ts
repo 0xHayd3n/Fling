@@ -18,7 +18,13 @@ export type FlingErrorCode =
   | "BUILD_TOOL_NOT_FOUND"
   | "BUILD_TIMEOUT"
   | "BUILD_FAILED"
-  | "CONFIG_MISSING";
+  | "CONFIG_MISSING"
+  | "PAIRING_TIMEOUT"
+  | "ADB_PAIR_FAILED"
+  | "ADB_CONNECT_FAILED"
+  | "MDNS_UNAVAILABLE"
+  | "UNKNOWN_SERVICE"
+  | "PAIRING_IN_PROGRESS";
 
 export class FlingError extends Error {
   readonly code: FlingErrorCode;
