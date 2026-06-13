@@ -25,6 +25,9 @@ function createWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
+      // electron-forge VitePlugin emits the preload as <entry-basename>.js,
+      // i.e. src/preload/index.ts -> .vite/build/index.js. If you rename
+      // the preload entry in forge.config.ts, update this path.
       preload: path.join(__dirname, "index.js"),
     },
   });
