@@ -1,5 +1,6 @@
 import type { Device } from "@eleutex/fling/devices";
 import type { RecentProject } from "../../main/ipc/channels";
+import { loadWindowPrefs, type WindowPrefs } from "../lib/windowPrefs";
 
 export interface AppState {
   currentProject: { path: string; name: string } | null;
@@ -23,9 +24,10 @@ export interface AppState {
     firstKeyNal: Uint8Array | null;
     firstKeyPts: number;
   };
+  window: WindowPrefs;
   deploy: { runId: string | null; status: "idle" | "running"; toastId: string | null };
   toasts: Toast[];
-  modals: { devicePicker: boolean; recentProjects: boolean; settings: boolean; pairing: boolean };
+  modals: { devicePicker: boolean; recentProjects: boolean; settings: boolean; pairing: boolean; opacity: boolean };
 }
 
 export interface Toast {
@@ -44,7 +46,8 @@ export const INITIAL_STATE: AppState = {
   selectedDeviceId: null,
   adbOk: true,
   mirror: { mirrorId: null, deviceId: null, width: 0, height: 0, status: "off", errorReason: null, configNal: null, firstKeyNal: null, firstKeyPts: 0 },
+  window: loadWindowPrefs(),
   deploy: { runId: null, status: "idle", toastId: null },
   toasts: [],
-  modals: { devicePicker: false, recentProjects: false, settings: false, pairing: false },
+  modals: { devicePicker: false, recentProjects: false, settings: false, pairing: false, opacity: false },
 };
