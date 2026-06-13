@@ -113,6 +113,24 @@ export function registerIpcHandlers(opts: {
   ipcMain.handle(Channels.windowSetOpacity, async (_e, opacity: unknown) => {
     opts.getWindow()?.setOpacity(clampOpacity(opacity));
   });
+  ipcMain.handle(Channels.windowGetBounds, async () => {
+    return opts.getWindow()?.getBounds() ?? { x: 0, y: 0, width: 0, height: 0 };
+  });
+  ipcMain.handle(Channels.windowSetBounds, async (_e, bounds: unknown) => {
+    const win = opts.getWindow();
+    if (!win || typeof bounds !== "object" || bounds === null) return;
+    const b = bounds as Partial<{ x: number; y: number; width: number; height: number }>;
+    if (typeof b.x !== "number" || typeof b.y !== "number" ||
+        typeof b.width !== "number" || typeof b.height !== "number") return;
+    // Round to integers — Electron's setBounds is fussy about fractional dims
+    // on Windows (returns silently without applying if a value isn't an int).
+    win.setBounds({
+      x: Math.round(b.x),
+      y: Math.round(b.y),
+      width: Math.round(b.width),
+      height: Math.round(b.height),
+    });
+  });
 
   // adb-health latch: only push to renderer when state flips, so we don't
   // spam the channel every 1.5s poll.

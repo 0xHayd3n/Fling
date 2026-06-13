@@ -5,6 +5,7 @@ import type {
   MirrorStartReq, MirrorStartRes, MirrorStopReq, MirrorInputReq,
   MirrorFrameEvt, MirrorResizeEvt, MirrorEndedEvt,
   PairingStartReq, FlingConfig, DevicesChangedEvt, AdbProbeEvt,
+  WindowBounds,
 } from "../main/ipc/channels";
 import type { Device } from "@eleutex/fling/devices";
 
@@ -35,6 +36,8 @@ export interface FlingApi {
     close: () => Promise<void>;
     setAlwaysOnTop: (pinned: boolean) => Promise<void>;
     setOpacity: (opacity: number) => Promise<void>;
+    getBounds: () => Promise<WindowBounds>;
+    setBounds: (bounds: WindowBounds) => Promise<void>;
   };
   on: {
     devicesChanged: (cb: (e: DevicesChangedEvt) => void) => () => void;

@@ -13,6 +13,7 @@ import { DevicePickerPopover } from "./components/DevicePickerPopover";
 import { PinButton } from "./components/PinButton";
 import { OpacityPopover } from "./components/OpacityPopover";
 import { SideControls } from "./components/SideControls";
+import { CornerResize } from "./components/CornerResize";
 import { SettingsIcon, FolderIcon } from "./components/Icons";
 
 // Hover band around the right edge of the shell: how far inside (px) and how
@@ -103,6 +104,7 @@ function Body() {
             {mirroring ? <MirrorCanvas /> : <StateHero />}
           </div>
           {mirroring && <SideControls visible={rightHover} />}
+          <CornerResize />
         </div>
       </div>
       <DevicePickerPopover />

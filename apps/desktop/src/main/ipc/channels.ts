@@ -18,6 +18,8 @@ export const Channels = {
   windowClose: "fling.window.close",
   windowSetAlwaysOnTop: "fling.window.setAlwaysOnTop",
   windowSetOpacity: "fling.window.setOpacity",
+  windowGetBounds: "fling.window.getBounds",
+  windowSetBounds: "fling.window.setBounds",
   // Main → renderer (send)
   devicesChanged: "fling.devices.changed",
   adbProbe: "fling.adb.probe",
@@ -82,3 +84,5 @@ export interface FlingConfig {
 
 export interface DevicesChangedEvt { devices: Device[]; }
 export interface AdbProbeEvt { ok: boolean; reason?: string; }
+
+export interface WindowBounds { x: number; y: number; width: number; height: number; }
