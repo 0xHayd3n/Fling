@@ -28,6 +28,8 @@ import { registerScreenshotWithUi } from "./tools/screenshot-with-ui.js";
 import { registerDeviceState } from "./tools/device-state.js";
 import { registerStartPairQr } from "./tools/start-pair-qr.js";
 import { registerWaitForPair } from "./tools/wait-for-pair.js";
+import { registerForwardCdp } from "./tools/forward-cdp.js";
+import { globalCdpForwards } from "./cdpForwards.js";
 import { shutdownPool } from "./shellPool.js";
 
 const SERVER_NAME = "fling";
@@ -35,9 +37,13 @@ const pkgPath = join(dirname(fileURLToPath(import.meta.url)), "..", "package.jso
 const SERVER_VERSION = (JSON.parse(readFileSync(pkgPath, "utf8")) as { version: string }).version;
 
 async function main() {
-  process.on("exit", () => shutdownPool());
+  process.on("exit", () => {
+    shutdownPool();
+    void globalCdpForwards.teardownAll();
+  });
   process.on("SIGINT", () => {
     shutdownPool();
+    void globalCdpForwards.teardownAll();
     process.exit(0);
   });
 
@@ -70,6 +76,7 @@ async function main() {
   registerDeviceState(server);
   registerStartPairQr(server);
   registerWaitForPair(server);
+  registerForwardCdp(server);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
