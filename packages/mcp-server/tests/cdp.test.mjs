@@ -121,3 +121,27 @@ describe("parseCdpTargets", () => {
     assert.throws(() => parseCdpTargets("not json"));
   });
 });
+
+import { classifyTargetFailure } from "../dist/cdp.js";
+
+describe("classifyTargetFailure", () => {
+  it("returns CDP_WEBVIEW_NOT_DEBUGGABLE when only chrome sockets are visible", () => {
+    const sockets = [chrome()];
+    assert.equal(
+      classifyTargetFailure(sockets, [12345], "webview"),
+      "CDP_WEBVIEW_NOT_DEBUGGABLE"
+    );
+  });
+
+  it("returns CDP_NO_TARGETS when no sockets at all exist for prefer=webview", () => {
+    assert.equal(classifyTargetFailure([], [12345], "webview"), "CDP_NO_TARGETS");
+  });
+
+  it("returns CDP_NO_TARGETS when prefer=chrome and no chrome socket exists", () => {
+    assert.equal(classifyTargetFailure([webview(1)], [], "chrome"), "CDP_NO_TARGETS");
+  });
+
+  it("returns CDP_NO_TARGETS when prefer=any and nothing matches", () => {
+    assert.equal(classifyTargetFailure([], [], "any"), "CDP_NO_TARGETS");
+  });
+});
