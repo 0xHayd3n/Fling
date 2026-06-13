@@ -10,6 +10,7 @@ import { StateHero } from "./components/StateHero";
 import { MirrorButton } from "./components/MirrorButton";
 import { MirrorCanvas } from "./components/MirrorCanvas";
 import { DevicePickerPopover } from "./components/DevicePickerPopover";
+import { PairingDialog } from "./components/PairingDialog";
 import { PinButton } from "./components/PinButton";
 import { OpacityPopover } from "./components/OpacityPopover";
 import { SideControls } from "./components/SideControls";
@@ -109,6 +110,7 @@ function Body() {
         {mirroring && <SideControls visible={rightHover} />}
       </div>
       <DevicePickerPopover />
+      <PairingDialog />
       <OpacityPopover />
     </div>
   );
