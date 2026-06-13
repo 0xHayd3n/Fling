@@ -3,6 +3,8 @@
   width: 100%;
   height: 100%;
   background: var(--canvas-bg);
-  cursor: crosshair;
+  /* Default arrow pointer — feels like a normal Android device emulator
+     rather than a paint/diagram tool. */
+  cursor: default;
   touch-action: none;
 }
