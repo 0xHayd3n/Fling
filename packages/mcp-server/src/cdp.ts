@@ -1,3 +1,7 @@
+import { runAdb } from "./adb.js";
+import { FlingError } from "./errors.js";
+import { createServer } from "node:net";
+
 export type CdpSocket =
   | { kind: "webview"; pid: number; name: string }
   | { kind: "chrome"; pid?: number; name: string };
@@ -64,4 +68,112 @@ export function parseCdpTargets(json: string): CdpTarget[] {
     webSocketDebuggerUrl:
       typeof p.webSocketDebuggerUrl === "string" ? p.webSocketDebuggerUrl : undefined,
   }));
+}
+
+export async function pidofPackage(
+  deviceArgs: string[],
+  packageName: string
+): Promise<number[]> {
+  const { stdout } = await runAdb([...deviceArgs, "shell", "pidof", packageName]);
+  return stdout
+    .trim()
+    .split(/\s+/)
+    .filter((s) => /^\d+$/.test(s))
+    .map(Number);
+}
+
+export async function readProcNetUnix(deviceArgs: string[]): Promise<string> {
+  const { stdout } = await runAdb([...deviceArgs, "shell", "cat", "/proc/net/unix"]);
+  return stdout;
+}
+
+export async function setupForward(
+  deviceArgs: string[],
+  localPort: number,
+  socketName: string
+): Promise<void> {
+  try {
+    await runAdb([
+      ...deviceArgs,
+      "forward",
+      `tcp:${localPort}`,
+      `localabstract:${socketName}`,
+    ]);
+  } catch (err) {
+    const cause = err instanceof Error ? err.message : String(err);
+    throw new FlingError(
+      "CDP_FORWARD_FAILED",
+      `adb forward tcp:${localPort} localabstract:${socketName} failed. Port ${localPort} may be in use — pass a different local_port or omit it for auto-allocation. Cause: ${cause}`
+    );
+  }
+}
+
+export async function teardownForward(
+  deviceArgs: string[],
+  localPort: number
+): Promise<void> {
+  try {
+    await runAdb([...deviceArgs, "forward", "--remove", `tcp:${localPort}`]);
+  } catch {
+    // Best-effort cleanup; ignore failures.
+  }
+}
+
+export async function probeVersion(localPort: number): Promise<void> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 2000);
+  try {
+    const res = await fetch(`http://127.0.0.1:${localPort}/json/version`, {
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      throw new FlingError(
+        "CDP_PROBE_FAILED",
+        `CDP probe at /json/version returned ${res.status} ${res.statusText}. The WebView may still be initializing — retry in a moment.`
+      );
+    }
+    await res.text();
+  } catch (err) {
+    if (err instanceof FlingError) throw err;
+    const cause = err instanceof Error ? err.message : String(err);
+    throw new FlingError(
+      "CDP_PROBE_FAILED",
+      `CDP probe at /json/version failed: ${cause}. The WebView may still be initializing — retry in a moment.`
+    );
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function listTargets(localPort: number): Promise<CdpTarget[]> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 2000);
+  try {
+    const res = await fetch(`http://127.0.0.1:${localPort}/json/list`, {
+      signal: controller.signal,
+    });
+    if (!res.ok) return [];
+    const text = await res.text();
+    return parseCdpTargets(text);
+  } catch {
+    return [];
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function allocateEphemeralPort(): Promise<number> {
+  return await new Promise<number>((resolve, reject) => {
+    const srv = createServer();
+    srv.on("error", reject);
+    srv.listen(0, () => {
+      const address = srv.address();
+      if (address && typeof address === "object") {
+        const { port } = address;
+        srv.close(() => resolve(port));
+      } else {
+        srv.close(() => reject(new Error("Could not allocate ephemeral port")));
+      }
+    });
+  });
 }
