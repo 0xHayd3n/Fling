@@ -1,11 +1,10 @@
 .column {
-  /* Anchored to the right edge of the canvasFrame (NOT the shell), so
-     the buttons are always inside the window regardless of shell width.
-     When the window is wider than the phone aspect, this puts them at
-     the far-right of the transparent area; when the window matches
-     phone aspect, they sit just inside the right edge of the shell. */
+  /* Anchored to canvasFrame's right edge in the reserved right-padding
+     area, so buttons sit outside the shell. Vertical position 30% puts
+     the column in the upper half — matching where physical volume and
+     power keys live on real phones rather than at vertical centre. */
   position: absolute;
-  top: 50%;
+  top: 30%;
   right: 14px;
   transform: translateY(-50%) translateX(8px);
   display: flex;

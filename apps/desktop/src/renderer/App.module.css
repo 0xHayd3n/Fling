@@ -10,10 +10,12 @@
 .canvasFrame {
   flex: 1;
   min-height: 0;
-  /* Breathing room for the shell's drop shadow — without this the bottom
-     edge of the shadow gets clipped by the window edge (the app has only
-     8px outer padding, the shadow extends ~40px). */
-  padding: 16px 4px 24px 4px;
+  /* Right padding reserves outside-the-shell space for SideControls so
+     they appear in the transparent area beyond the shell's right edge,
+     not on top of the shell. ~72px = right offset (14) + button (44) +
+     left margin (14). Vertical padding gives the shell's drop shadow
+     room to render without being clipped by the window edge. */
+  padding: 16px 72px 24px 4px;
   display: flex;
   align-items: center;
   justify-content: center;
