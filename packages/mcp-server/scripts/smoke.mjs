@@ -111,6 +111,18 @@ const requests = [
   },
   {
     jsonrpc: "2.0",
+    id: 14,
+    method: "tools/call",
+    params: {
+      name: "forward_cdp",
+      arguments: {
+        package_name: "com.example.fake",
+        device_id: "no-such-device-12345",
+      },
+    },
+  },
+  {
+    jsonrpc: "2.0",
     id: 100,
     method: "tools/call",
     params: { name: "start_pair_qr", arguments: {} },
