@@ -1,10 +1,11 @@
-import { ipcMain, screen, type BrowserWindow } from "electron";
+import { ipcMain, type BrowserWindow } from "electron";
 import { Channels, type MirrorInputReq, type MirrorStartReq, type MirrorStopReq, type PairingStatus, type PairingStartWithCodeReq } from "./channels";
 import type { DeviceWatcher } from "../deviceWatcher";
 import { listDevices } from "@eleutex/fling/devices";
 import type { ScrcpyManager } from "../scrcpyClient";
 import { clampOpacity } from "../../renderer/lib/windowPrefs";
 import { readConfig, writeConfig, rememberPairedDevice as persistPairedDevice } from "../configStore";
+import { phoneShapedBounds } from "../windowSizing";
 
 export function registerIpcHandlers(opts: {
   watcher: DeviceWatcher;
@@ -20,21 +21,6 @@ export function registerIpcHandlers(opts: {
   ipcMain.handle(Channels.deployRun, async () => ({ runId: "stub" }));
   ipcMain.handle(Channels.deployCancel, async () => ({ cancelled: false }));
 
-  // App layout vertical: padding + toolbar + gap + canvas + padding.
-  // App layout horizontal: padding + canvas + padding.
-  // Toolbar is box-sizing: border-box, exactly 64px including the 1px borders.
-  // Must match Toolbar.module.css .toolbar height.
-  const TOOLBAR_HEIGHT = 64;
-  const APP_PADDING = 8;
-  const TOOLBAR_CANVAS_GAP = 8;
-  const TOOLBAR_MIN_WIDTH = 320;
-  const TARGET_WINDOW_HEIGHT = 800;
-  // Reserved transparent column to the right of the shell where SideControls
-  // float. Matches the sideArea width in App.module.css.
-  const SIDE_CONTROLS_RESERVE = 72;
-  const EXTRA_W = APP_PADDING * 2 + SIDE_CONTROLS_RESERVE;
-  const EXTRA_H = APP_PADDING * 2 + TOOLBAR_HEIGHT + TOOLBAR_CANVAS_GAP;
-
   ipcMain.handle(Channels.mirrorStart, async (_e, req: MirrorStartReq) => {
     const sess = await opts.scrcpy.start(req.deviceId, {
       maxResolution: req.maxResolution,
@@ -46,19 +32,7 @@ export function registerIpcHandlers(opts: {
         // Initial sizing: open at a sensible phone-shaped window. The user
         // can then resize freely — the rounded shell inside maintains phone
         // aspect via CSS, spare window space is transparent.
-        const aspect = sess.width / sess.height;
-        const display = screen.getDisplayMatching(win.getBounds());
-        const maxH = Math.floor(display.workAreaSize.height * 0.85);
-        const targetH = Math.min(TARGET_WINDOW_HEIGHT, maxH);
-        const canvasH = Math.max(1, targetH - EXTRA_H);
-        const canvasW = Math.ceil(canvasH * aspect);
-        let finalW = canvasW + EXTRA_W;
-        let finalH = targetH;
-        if (finalW < TOOLBAR_MIN_WIDTH) {
-          finalW = TOOLBAR_MIN_WIDTH;
-          const adjustedCanvasW = TOOLBAR_MIN_WIDTH - EXTRA_W;
-          finalH = Math.ceil(adjustedCanvasW / aspect) + EXTRA_H;
-        }
+        const { width: finalW, height: finalH } = phoneShapedBounds(win, sess.width / sess.height);
         const b = win.getBounds();
         win.setBounds({ ...b, width: finalW, height: finalH });
       }

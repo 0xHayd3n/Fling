@@ -4,6 +4,7 @@ import { registerIpcHandlers } from "./ipc/handlers";
 import { createDeviceWatcher } from "./deviceWatcher";
 import { createScrcpyManager } from "./scrcpyClient";
 import { attemptReconnect } from "./autoReconnect";
+import { phoneShapedBounds, DEFAULT_PHONE_ASPECT } from "./windowSizing";
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -44,7 +45,19 @@ function createWindow() {
     );
   }
 
-  mainWindow.once("ready-to-show", () => mainWindow?.show());
+  mainWindow.once("ready-to-show", () => {
+    // Size the window to a 9:16 phone shape on first paint so the no-phone
+    // hero card lives inside a phone-shaped shell instead of a wide desktop
+    // window with empty bands of transparent space on either side. Once a
+    // phone connects, mirror.start overrides this with the device's real
+    // aspect.
+    if (mainWindow) {
+      const { width, height } = phoneShapedBounds(mainWindow, DEFAULT_PHONE_ASPECT);
+      const b = mainWindow.getBounds();
+      mainWindow.setBounds({ ...b, width, height });
+    }
+    mainWindow?.show();
+  });
   mainWindow.on("closed", () => { mainWindow = null; });
 }
 
