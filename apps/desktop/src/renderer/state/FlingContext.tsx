@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useReducer, type ReactNode, type Dispatch } from "react";
+import { createContext, useContext, useEffect, useReducer, useRef, type ReactNode, type Dispatch } from "react";
 import { reducer, type Action } from "./reducer";
 import { INITIAL_STATE, type AppState } from "./types";
 import { saveWindowPrefs } from "../lib/windowPrefs";
@@ -7,6 +7,9 @@ const Ctx = createContext<{ state: AppState; dispatch: Dispatch<Action> } | null
 
 export function FlingProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
+
+  const stateRef = useRef(state);
+  useEffect(() => { stateRef.current = state; }, [state]);
 
   useEffect(() => {
     const offDevices = window.fling.on.devicesChanged((e) =>
@@ -27,6 +30,20 @@ export function FlingProvider({ children }: { children: ReactNode }) {
     const offMirrorEnded = window.fling.on.mirrorEnded((e) =>
       dispatch({ type: "MIRROR_ENDED", evt: e })
     );
+    const offPairingStatus = window.fling.on.pairingStatus((evt) => {
+      if (evt.status.kind !== "success") return;
+      // PairingDialog handles its own success toast; skip when the modal is open.
+      if (stateRef.current.modals.pairing) return;
+      dispatch({
+        type: "TOAST_ADD",
+        toast: {
+          id: `reconnect-${Date.now()}`,
+          kind: "success",
+          message: `Reconnected · ${evt.status.model}`,
+          auto: 3500,
+        },
+      });
+    });
     void window.fling.devices.list().then((devices) =>
       dispatch({ type: "DEVICES_CHANGED", devices })
     );
@@ -34,7 +51,7 @@ export function FlingProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "SET_RECENT_PROJECTS", recent })
     );
     return () => {
-      offDevices(); offAdbProbe(); offDeployStarted(); offDeployDone(); offMirrorResize(); offMirrorEnded();
+      offDevices(); offAdbProbe(); offDeployStarted(); offDeployDone(); offMirrorResize(); offMirrorEnded(); offPairingStatus();
     };
   }, []);
 
