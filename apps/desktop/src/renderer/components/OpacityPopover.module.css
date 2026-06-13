@@ -15,6 +15,7 @@
   border: none;
   border-radius: 12px;
   box-shadow: var(--fluid-glass-inset), var(--fluid-glass-lift);
+  will-change: backdrop-filter;
 }
 .label {
   display: flex;

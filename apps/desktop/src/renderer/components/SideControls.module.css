@@ -37,6 +37,10 @@
   justify-content: center;
   box-shadow: var(--fluid-glass-inset), var(--fluid-glass-lift);
   transition: transform 120ms ease, box-shadow 120ms ease, color 120ms ease;
+  /* GPU layer promotion — backdrop-filter is recomputed every frame the
+     canvas under the buttons updates, so this is the most perf-sensitive
+     of the three glass surfaces. */
+  will-change: backdrop-filter;
 }
 .btn:hover {
   transform: translateY(-1px);

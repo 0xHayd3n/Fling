@@ -16,6 +16,9 @@
   border: none;
   border-radius: 14px;
   box-shadow: var(--fluid-glass-inset), var(--fluid-glass-lift);
+  /* Promote to its own GPU layer so backdrop-filter recompute doesn't
+     pin the main thread. */
+  will-change: backdrop-filter;
   -webkit-app-region: drag;
   user-select: none;
   flex-shrink: 0;
