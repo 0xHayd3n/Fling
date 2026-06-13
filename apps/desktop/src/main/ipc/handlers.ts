@@ -1,7 +1,8 @@
 import { ipcMain, type BrowserWindow } from "electron";
-import { Channels, type FlingConfig } from "./channels";
+import { Channels, type FlingConfig, type MirrorInputReq, type MirrorStartReq, type MirrorStopReq } from "./channels";
 import type { DeviceWatcher } from "../deviceWatcher";
 import { listDevices } from "@eleutex/fling/devices";
+import type { ScrcpyManager } from "../scrcpyClient";
 
 const DEFAULT_CONFIG: FlingConfig = {
   version: 1,
@@ -20,6 +21,7 @@ const DEFAULT_CONFIG: FlingConfig = {
 export function registerIpcHandlers(opts: {
   watcher: DeviceWatcher;
   getWindow: () => BrowserWindow | null;
+  scrcpy: ScrcpyManager;
 }) {
   ipcMain.handle(Channels.projectOpen, async () => null);
   ipcMain.handle(Channels.projectRecent, async () => []);
@@ -29,9 +31,24 @@ export function registerIpcHandlers(opts: {
   });
   ipcMain.handle(Channels.deployRun, async () => ({ runId: "stub" }));
   ipcMain.handle(Channels.deployCancel, async () => ({ cancelled: false }));
-  ipcMain.handle(Channels.mirrorStart, async () => ({ mirrorId: "stub", width: 1080, height: 1920 }));
-  ipcMain.handle(Channels.mirrorStop, async () => ({}));
-  ipcMain.handle(Channels.mirrorInput, async () => undefined);
+
+  ipcMain.handle(Channels.mirrorStart, async (_e, req: MirrorStartReq) => {
+    const sess = await opts.scrcpy.start(req.deviceId, {
+      maxResolution: req.maxResolution,
+      bitrate: req.bitrate,
+    });
+    return { mirrorId: sess.mirrorId, width: sess.width, height: sess.height };
+  });
+  ipcMain.handle(Channels.mirrorStop, async (_e, req: MirrorStopReq) => {
+    await opts.scrcpy.stop(req.mirrorId);
+    return {};
+  });
+  ipcMain.handle(Channels.mirrorInput, async (_e, req: MirrorInputReq) => {
+    if (req.event && req.event.kind === "touch" && req.event.bytes) {
+      opts.scrcpy.send(req.mirrorId, new Uint8Array(req.event.bytes));
+    }
+  });
+
   ipcMain.handle(Channels.pairingStart, async () => ({ paired: true }));
   ipcMain.handle(Channels.configRead, async () => DEFAULT_CONFIG);
   ipcMain.handle(Channels.configWrite, async () => ({ written: true }));
@@ -47,5 +64,12 @@ export function registerIpcHandlers(opts: {
   opts.watcher.on("changed", (devices) => {
     const win = opts.getWindow();
     win?.webContents.send(Channels.devicesChanged, { devices });
+  });
+
+  opts.scrcpy.on("frame", (mirrorId: string, nal: Uint8Array, pts: number) => {
+    opts.getWindow()?.webContents.send(Channels.mirrorFrame, { mirrorId, nal, pts });
+  });
+  opts.scrcpy.on("ended", (mirrorId: string, reason: string) => {
+    opts.getWindow()?.webContents.send(Channels.mirrorEnded, { mirrorId, reason });
   });
 }

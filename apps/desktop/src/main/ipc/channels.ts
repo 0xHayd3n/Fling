@@ -46,9 +46,7 @@ export interface MirrorStartRes { mirrorId: string; width: number; height: numbe
 export interface MirrorStopReq { mirrorId: string; }
 
 export type MirrorInputEvent =
-  | { kind: "touch-down"; x: number; y: number; pointerId: number }
-  | { kind: "touch-up"; x: number; y: number; pointerId: number }
-  | { kind: "touch-move"; x: number; y: number; pointerId: number };
+  | { kind: "touch"; bytes: ArrayBuffer };
 
 export interface MirrorInputReq { mirrorId: string; event: MirrorInputEvent; }
 export interface MirrorFrameEvt { mirrorId: string; nal: Uint8Array; pts: number; }
