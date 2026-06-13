@@ -75,9 +75,7 @@ export function registerTapByText(server: McpServer): void {
         "if the element is not currently visible. " +
         "Prefer over input_tap when you can name the target by visible text. For " +
         "icon buttons with no text, use tap_by_content_desc. For non-localized " +
-        "or robust targeting, prefer tap_by_resource_id. " +
-        "Designed cheap enough that the inner navigation loop can run on a " +
-        "smaller/cheaper model (Haiku, Sonnet).",
+        "or robust targeting, prefer tap_by_resource_id.",
       inputSchema: {
         text: z.string().min(1).describe("Visible text to match."),
         exact: z

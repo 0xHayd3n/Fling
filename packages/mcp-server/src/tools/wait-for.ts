@@ -68,9 +68,7 @@ export function registerWaitFor(server: McpServer): void {
         "Polls dump_ui at the given interval until the selector matches, or " +
         "throws UI_WAIT_TIMEOUT after timeout_ms elapses. Use after launching " +
         "an app or triggering an async transition. Costs roughly one dump every " +
-        "poll_interval_ms (default 500ms) until found. " +
-        "Designed cheap enough that the inner navigation loop can run on a " +
-        "smaller/cheaper model (Haiku, Sonnet).",
+        "poll_interval_ms (default 500ms) until found.",
       inputSchema: {
         by: z
           .enum(["text", "resource_id", "content_desc"])

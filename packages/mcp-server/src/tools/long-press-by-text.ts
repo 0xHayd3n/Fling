@@ -35,9 +35,7 @@ export function registerLongPressByText(server: McpServer): void {
       description:
         "Same matching and disambiguation as tap_by_text, but holds the touch for " +
         "the specified duration (default 1000ms). Used to invoke context menus, " +
-        "drag handles, and similar long-press affordances. " +
-        "Designed cheap enough that the inner navigation loop can run on a " +
-        "smaller/cheaper model (Haiku, Sonnet).",
+        "drag handles, and similar long-press affordances.",
       inputSchema: {
         text: z.string().min(1).describe("Visible text to match."),
         exact: z

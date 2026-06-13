@@ -53,9 +53,7 @@ export function registerFindOnScreen(server: McpServer): void {
       description:
         "Pure query — no action taken. Returns up to 20 matches for the given selector. " +
         "Use to assert state, disambiguate between multiple matches, or check whether " +
-        "something is visible before deciding what to do. " +
-        "Designed cheap enough that the inner navigation loop can run on a smaller/cheaper " +
-        "model (Haiku, Sonnet). Model selection is your IDE's choice — Fling makes no demands.",
+        "something is visible before deciding what to do.",
       inputSchema: {
         by: z
           .enum(["text", "resource_id", "content_desc"])

@@ -46,9 +46,7 @@ export function registerTapByResourceId(server: McpServer): void {
         "clickable container whose bounds contain it. Resource IDs are unique by " +
         "construction — typically 0 or 1 match. Most robust selector when you " +
         "know the id (survives localization changes). No scroll_into_view; " +
-        "compose with scroll_until_visible if the element is off-screen. " +
-        "Designed cheap enough that the inner navigation loop can run on a " +
-        "smaller/cheaper model (Haiku, Sonnet).",
+        "compose with scroll_until_visible if the element is off-screen.",
       inputSchema: {
         resource_id: z
           .string()

@@ -96,9 +96,7 @@ export function registerScrollUntilVisible(server: McpServer): void {
         "Dump UI; if the selector matches, return immediately. Otherwise swipe " +
         "in the given direction (default \"down\") and redump, up to max_scrolls " +
         "times. Returns {found: false} when exhausted — NOT an error. The AI " +
-        "decides whether to keep trying or change strategy. " +
-        "Designed cheap enough that the inner navigation loop can run on a " +
-        "smaller/cheaper model (Haiku, Sonnet).",
+        "decides whether to keep trying or change strategy.",
       inputSchema: {
         by: z
           .enum(["text", "resource_id", "content_desc"])

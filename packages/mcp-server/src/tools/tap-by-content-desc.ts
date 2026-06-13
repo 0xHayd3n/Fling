@@ -50,9 +50,7 @@ export function registerTapByContentDesc(server: McpServer): void {
         "Dump UI, find the first node whose content-desc matches, and tap the " +
         "smallest clickable container whose bounds contain it. Substring matching " +
         "is case-sensitive by default; pass exact:true for strict equality. " +
-        "Used for icon buttons with no visible text (Search, Back, Account). " +
-        "Designed cheap enough that the inner navigation loop can run on a " +
-        "smaller/cheaper model (Haiku, Sonnet).",
+        "Used for icon buttons with no visible text (Search, Back, Account).",
       inputSchema: {
         content_desc: z
           .string()

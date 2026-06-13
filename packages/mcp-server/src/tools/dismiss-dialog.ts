@@ -43,9 +43,7 @@ export function registerDismissDialog(server: McpServer): void {
         "known dismissal labels (Don't allow, Cancel, Skip, Dismiss, No thanks, " +
         "Maybe later, Deny, Close, No, Not now, and their variants), and tap it. " +
         "Case-insensitive. Single-purpose — dismisses one dialog per call. " +
-        "If multiple stacked dialogs are open, call again. " +
-        "Designed cheap enough that the inner navigation loop can run on a " +
-        "smaller/cheaper model (Haiku, Sonnet).",
+        "If multiple stacked dialogs are open, call again.",
       inputSchema: {
         device_id: deviceIdInput,
       },
