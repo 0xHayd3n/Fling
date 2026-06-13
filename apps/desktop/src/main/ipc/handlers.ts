@@ -53,8 +53,10 @@ export function registerIpcHandlers(opts: {
     try {
       const win = opts.getWindow();
       if (win && sess.width > 0 && sess.height > 0) {
+        // Initial sizing: open at a sensible phone-shaped window. The user
+        // can then resize freely — the rounded shell inside maintains phone
+        // aspect via CSS, spare window space is transparent.
         const aspect = sess.width / sess.height;
-        win.setAspectRatio(aspect, { width: EXTRA_W, height: EXTRA_H });
         const display = screen.getDisplayMatching(win.getBounds());
         const maxH = Math.floor(display.workAreaSize.height * 0.85);
         const targetH = Math.min(TARGET_WINDOW_HEIGHT, maxH);
@@ -71,7 +73,7 @@ export function registerIpcHandlers(opts: {
         win.setBounds({ ...b, width: finalW, height: finalH });
       }
     } catch (err) {
-      process.stderr.write(`[handlers] aspect-lock failed: ${err instanceof Error ? err.message : String(err)}\n`);
+      process.stderr.write(`[handlers] initial sizing failed: ${err instanceof Error ? err.message : String(err)}\n`);
     }
     const toArrayBuffer = (u8: Uint8Array): ArrayBuffer =>
       u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength) as ArrayBuffer;
@@ -86,7 +88,6 @@ export function registerIpcHandlers(opts: {
   });
   ipcMain.handle(Channels.mirrorStop, async (_e, req: MirrorStopReq) => {
     await opts.scrcpy.stop(req.mirrorId);
-    try { opts.getWindow()?.setAspectRatio(0, { width: 0, height: 0 }); } catch {}
     return {};
   });
   ipcMain.handle(Channels.mirrorInput, async (_e, req: MirrorInputReq) => {

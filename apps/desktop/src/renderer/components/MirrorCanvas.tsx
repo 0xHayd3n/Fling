@@ -192,15 +192,10 @@ export function MirrorCanvas() {
     });
   }
 
-  const aspectStyle: React.CSSProperties = state.mirror.width && state.mirror.height
-    ? ({ "--phone-aspect": `${state.mirror.width} / ${state.mirror.height}` } as React.CSSProperties)
-    : {};
-
   return (
     <canvas
       ref={canvasRef}
       className={styles.canvas}
-      style={aspectStyle}
       onPointerDown={(e) => {
         const p = devicePos(e);
         if (p) { (e.target as HTMLElement).setPointerCapture(e.pointerId); send("down", p.x, p.y, e.pointerId); }

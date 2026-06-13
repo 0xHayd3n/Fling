@@ -62,8 +62,17 @@ function Body() {
         right={<WindowControls />}
         bottom={<ConnectionIndicator />}
       />
-      <div className={styles.canvas}>
-        {mirroring ? <MirrorCanvas /> : <StateHero />}
+      <div className={styles.canvasFrame}>
+        <div
+          className={styles.canvas}
+          style={
+            state.mirror.width && state.mirror.height
+              ? ({ "--phone-aspect": `${state.mirror.width} / ${state.mirror.height}` } as React.CSSProperties)
+              : undefined
+          }
+        >
+          {mirroring ? <MirrorCanvas /> : <StateHero />}
+        </div>
       </div>
       <DevicePickerPopover />
       <OpacityPopover />
