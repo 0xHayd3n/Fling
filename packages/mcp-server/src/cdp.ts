@@ -44,3 +44,24 @@ export function pickTarget(
   const chromeMatch = sockets.find((s) => s.kind === "chrome");
   return chromeMatch ?? null;
 }
+
+export interface CdpTarget {
+  id: string;
+  type: string;
+  title?: string;
+  url?: string;
+  webSocketDebuggerUrl?: string;
+}
+
+export function parseCdpTargets(json: string): CdpTarget[] {
+  const parsed = JSON.parse(json);
+  if (!Array.isArray(parsed)) return [];
+  return parsed.map((p: Record<string, unknown>) => ({
+    id: String(p.id ?? ""),
+    type: String(p.type ?? ""),
+    title: typeof p.title === "string" ? p.title : undefined,
+    url: typeof p.url === "string" ? p.url : undefined,
+    webSocketDebuggerUrl:
+      typeof p.webSocketDebuggerUrl === "string" ? p.webSocketDebuggerUrl : undefined,
+  }));
+}

@@ -95,3 +95,29 @@ describe("pickTarget", () => {
     assert.equal(pickTarget([], [100], "any"), null);
   });
 });
+
+import { parseCdpTargets } from "../dist/cdp.js";
+
+describe("parseCdpTargets", () => {
+  it("extracts pages with their webSocketDebuggerUrl, title, and url", () => {
+    const json = fixture("cdp-json-list.json");
+    const targets = parseCdpTargets(json);
+    assert.equal(targets.length, 2);
+    assert.deepEqual(targets[0], {
+      id: "A",
+      type: "page",
+      title: "My Capacitor App",
+      url: "file:///android_asset/index.html",
+      webSocketDebuggerUrl: "ws://127.0.0.1:9223/devtools/page/A",
+    });
+    assert.equal(targets[1].webSocketDebuggerUrl, undefined);
+  });
+
+  it("returns [] when JSON is not an array", () => {
+    assert.deepEqual(parseCdpTargets("{}"), []);
+  });
+
+  it("throws on malformed JSON", () => {
+    assert.throws(() => parseCdpTargets("not json"));
+  });
+});
