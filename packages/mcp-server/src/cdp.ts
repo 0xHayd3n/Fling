@@ -22,3 +22,25 @@ export function parseProcNetUnix(output: string): CdpSocket[] {
   }
   return sockets;
 }
+
+export type Prefer = "webview" | "chrome" | "any";
+
+export function pickTarget(
+  sockets: CdpSocket[],
+  packagePids: number[],
+  prefer: Prefer
+): CdpSocket | null {
+  const pidSet = new Set(packagePids);
+
+  if (prefer === "webview" || prefer === "any") {
+    const webviewMatch = sockets.find(
+      (s) => s.kind === "webview" && pidSet.has(s.pid)
+    );
+    if (webviewMatch) return webviewMatch;
+    if (prefer === "webview") return null;
+  }
+
+  // prefer === "chrome" or "any" with no webview match.
+  const chromeMatch = sockets.find((s) => s.kind === "chrome");
+  return chromeMatch ?? null;
+}

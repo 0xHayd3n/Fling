@@ -45,3 +45,53 @@ describe("parseProcNetUnix", () => {
     ]);
   });
 });
+
+import { pickTarget } from "../dist/cdp.js";
+
+const webview = (pid) => ({ kind: "webview", pid, name: `webview_devtools_remote_${pid}` });
+const chrome = (pid) => pid
+  ? { kind: "chrome", pid, name: `chrome_devtools_remote_${pid}` }
+  : { kind: "chrome", name: "chrome_devtools_remote" };
+
+describe("pickTarget", () => {
+  it("prefers a webview socket matching one of the package PIDs", () => {
+    const target = pickTarget([webview(100), webview(200), chrome()], [200], "webview");
+    assert.deepEqual(target, webview(200));
+  });
+
+  it("returns null when prefer=webview but no socket matches the PIDs", () => {
+    const target = pickTarget([webview(100), chrome()], [999], "webview");
+    assert.equal(target, null);
+  });
+
+  it("returns null when prefer=webview and there are no webview sockets at all", () => {
+    const target = pickTarget([chrome()], [100], "webview");
+    assert.equal(target, null);
+  });
+
+  it("returns the first chrome socket when prefer=chrome", () => {
+    const target = pickTarget([webview(100), chrome(), chrome(7)], [100], "chrome");
+    assert.deepEqual(target, chrome());
+  });
+
+  it("ignores package PIDs in chrome mode (process-agnostic)", () => {
+    const target = pickTarget([chrome()], [], "chrome");
+    assert.deepEqual(target, chrome());
+  });
+
+  it("falls back from webview to chrome when prefer=any", () => {
+    const target = pickTarget([webview(100), chrome()], [999], "any");
+    assert.deepEqual(target, chrome());
+  });
+
+  it("picks webview first when prefer=any and a match exists", () => {
+    const target = pickTarget([webview(100), chrome()], [100], "any");
+    assert.deepEqual(target, webview(100));
+  });
+
+  it("returns null when nothing matches under any mode", () => {
+    assert.equal(pickTarget([], [100], "webview"), null);
+    assert.equal(pickTarget([], [100], "chrome"), null);
+    assert.equal(pickTarget([], [100], "any"), null);
+  });
+});
