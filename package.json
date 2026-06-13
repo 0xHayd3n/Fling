@@ -1,6 +1,6 @@
 {
   "name": "fling-monorepo",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "Fling — MCP server + desktop GUI for deploying Android apps.",
   "private": true,
   "type": "module",

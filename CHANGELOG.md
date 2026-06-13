@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 0.7.0 — 2026-06-14
+
+### Added
+- New `forward_cdp` tool — set up an `adb forward` from a local port to a debuggable Chromium target on the device (WebView in a hybrid app, or Chrome). Returns a CDP connect URL suitable for [Crabby](https://github.com/0xHayd3n/Crabby) or any CDP-aware tool.
+- `deploy_and_run` gains an opt-in `expose_cdp` flag. When `true`, after a successful launch Fling exposes the app's WebView over CDP and surfaces the connect URL in the response's `cdp` field. CDP failures do not fail the overall deploy.
+- New error codes: `CDP_APP_NOT_RUNNING`, `CDP_NO_TARGETS`, `CDP_WEBVIEW_NOT_DEBUGGABLE`, `CDP_FORWARD_FAILED`, `CDP_PROBE_FAILED`. The `WEBVIEW_NOT_DEBUGGABLE` error includes a copy-pasteable `setWebContentsDebuggingEnabled` snippet.
+- Internal: `src/cdp.ts` (pure parsers + thin ADB/fetch wrappers + `exposeCdp` composite), `src/cdpForwards.ts` (server-level forward registry torn down on shutdown).
+
 ## [0.6.1] — 2026-06-14
 
 ### Fixed
