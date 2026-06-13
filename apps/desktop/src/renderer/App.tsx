@@ -13,18 +13,26 @@ import { SettingsIcon, FolderIcon } from "./components/Icons";
 
 function Body() {
   const { state, dispatch } = useFling();
-  const autoStartedRef = useRef(false);
+  // Tracks the serial we've already auto-started for. Reset when no ready
+  // device is present so disconnect → reconnect re-triggers auto-mirror.
+  // (A boolean ref never reset would suppress recovery forever.)
+  const autoStartedSerialRef = useRef<string | null>(null);
   const mirroring = state.mirror.status === "running" || state.mirror.status === "starting";
 
-  // Auto-mirror on launch: when a single ready device appears and we haven't
-  // already tried this session, start the mirror automatically.
+  // Auto-mirror on launch: when a single ready device appears, start the
+  // mirror automatically — but only once per device-appearance, not once
+  // per app lifetime.
   useEffect(() => {
-    if (autoStartedRef.current) return;
     if (state.mirror.status !== "off") return;
     const ready = state.devices.filter((d) => d.state === "device");
+    if (ready.length === 0) {
+      autoStartedSerialRef.current = null;
+      return;
+    }
     if (ready.length !== 1) return;
     const deviceId = ready[0]!.serial;
-    autoStartedRef.current = true;
+    if (autoStartedSerialRef.current === deviceId) return;
+    autoStartedSerialRef.current = deviceId;
     void (async () => {
       dispatch({ type: "MIRROR_STARTING", deviceId });
       try {
