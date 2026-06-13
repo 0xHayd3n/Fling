@@ -2,7 +2,7 @@ import { useFling } from "../state/FlingContext";
 import styles from "./StateHero.module.css";
 
 export function StateHero() {
-  const { state } = useFling();
+  const { state, dispatch } = useFling();
   const ready = state.devices.find((d) => d.state === "device");
   const unauthorized = state.devices.find((d) => d.state === "unauthorized");
   const offline = state.devices.find((d) => d.state === "offline");
@@ -48,8 +48,13 @@ export function StateHero() {
     inner = (
       <>
         <h2>No phone detected</h2>
-        <p>Plug a phone in over USB.</p>
-        <p className={styles.fine}>Wireless pairing lands in a follow-up release.</p>
+        <p>Plug a phone in over USB, or pair wirelessly:</p>
+        <button
+          className={styles.heroButton}
+          onClick={() => dispatch({ type: "MODAL_OPEN", modal: "pairing" })}
+        >
+          Pair wirelessly →
+        </button>
       </>
     );
   }
