@@ -14,13 +14,13 @@ Fling wraps `adb` (the Android Debug Bridge) behind the [Model Context Protocol]
 
 ## Status
 
-**Phase 1 shipped and extended.** The original nine deploy/observe tools are live and Native-Gradle-first; on top of them Fling now exposes a layer of UI navigation primitives (`tap_by_text`, `dump_ui`, …), intent shortcuts (`open_setting`, `launch_settings`), and batched composite tools (`device_state`, `screenshot_with_ui`, `launch_and_wait`) designed so an agent can drive an Android device in single-shot calls instead of round-tripping screenshot → reason → tap. See `PLAN.md` for the full roadmap.
+**Phase 1 shipped and extended.** The original nine deploy/observe tools are live and Native-Gradle-first; on top of them Fling now exposes a layer of UI navigation primitives (`tap_by_text`, `dump_ui`, …), an intent shortcut (`open_setting`), and batched composite tools (`device_state`, `screenshot_with_ui`, `launch_and_wait`) designed so an agent can drive an Android device in single-shot calls instead of round-tripping screenshot → reason → tap. See `PLAN.md` for the full roadmap.
 
 | Category | Tools |
 |---|---|
 | Build & deploy | `list_devices`, `build_app`, `install_app`, `launch_app`, `stop_app`, `uninstall_app`, `read_logs`, `screenshot`, `deploy_and_run` |
 | UI navigation | `dump_ui`, `tap_by_text`, `tap_by_resource_id`, `tap_by_content_desc`, `long_press_by_text`, `tap_text_verified`, `find_on_screen`, `wait_for`, `scroll_until_visible`, `dismiss_dialog` |
-| Intent shortcuts | `open_setting`, `launch_settings` |
+| Intent shortcuts | `open_setting` |
 | Composite probes | `device_state`, `screenshot_with_ui`, `launch_and_wait`, `deploy_and_run` |
 | Wireless pairing | `start_pair_qr`, `wait_for_pair` |
 
@@ -230,8 +230,7 @@ For destinations reachable by a known Android intent, `am start` is ~10× faster
 
 | Tool | One-liner |
 |---|---|
-| `open_setting` | Open a built-in Settings panel by friendly name (`wifi`, `bluetooth`, `apps`, `display`, `sound`, `battery`, `storage`, `location`, `security`, `developer`, `about`, `date`, `language`, `accessibility`, `notifications`). |
-| `launch_settings` | Same idea but takes a raw `android.settings.<ACTION>` suffix or full action, restricted to a known-good allowlist of standard `Settings.ACTION_*` values. Optional `data_uri` accepts `package:<dotted-id>` for `APPLICATION_DETAILS_SETTINGS`. |
+| `open_setting` | Open a built-in Settings screen. Pass `panel` (friendly name: `wifi`, `bluetooth`, `apps`, `display`, `sound`, `battery`, `storage`, `location`, `security`, `developer`, `about`, `date`, `language`, `accessibility`, `notifications`) **or** `action` (allowlisted `android.settings.*` suffix like `WIFI_SETTINGS`). Optional `data_uri` accepts `package:<dotted-id>` for `APPLICATION_DETAILS_SETTINGS`. |
 
 ### Composite probes
 
