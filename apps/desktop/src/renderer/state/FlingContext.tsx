@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useReducer, type ReactNode, type Dispatch } from "react";
 import { reducer, type Action } from "./reducer";
 import { INITIAL_STATE, type AppState } from "./types";
+import { saveWindowPrefs } from "../lib/windowPrefs";
 
 const Ctx = createContext<{ state: AppState; dispatch: Dispatch<Action> } | null>(null);
 
@@ -36,6 +37,14 @@ export function FlingProvider({ children }: { children: ReactNode }) {
       offDevices(); offAdbProbe(); offDeployStarted(); offDeployDone(); offMirrorResize(); offMirrorEnded();
     };
   }, []);
+
+  // Persist window prefs to localStorage and push them to main on every
+  // change. Also runs on mount — restores pin/opacity after a restart.
+  useEffect(() => {
+    saveWindowPrefs(state.window);
+    void window.fling.window.setAlwaysOnTop(state.window.isPinned);
+    void window.fling.window.setOpacity(state.window.opacity);
+  }, [state.window.isPinned, state.window.opacity]);
 
   return <Ctx.Provider value={{ state, dispatch }}>{children}</Ctx.Provider>;
 }
