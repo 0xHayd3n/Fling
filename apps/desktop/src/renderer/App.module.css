@@ -19,6 +19,9 @@
   justify-content: center;
   background: transparent;
   box-sizing: border-box;
+  /* SideControls is an absolutely-positioned sibling of shellWrap inside
+     this frame, so we need a positioning context for its right-anchor. */
+  position: relative;
 }
 .shellWrap {
   /* Aspect-locked invisible wrapper. The shell itself fills this wrapper

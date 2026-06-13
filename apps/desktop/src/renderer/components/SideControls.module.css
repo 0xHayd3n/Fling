@@ -1,11 +1,12 @@
 .column {
-  /* Floats outside the right edge of the shell, anchored to its midpoint.
-     Translate keeps the slide-in animation; pointer-events disabled while
-     hidden so the column doesn't intercept clicks in the empty area. */
+  /* Anchored to the right edge of the canvasFrame (NOT the shell), so
+     the buttons are always inside the window regardless of shell width.
+     When the window is wider than the phone aspect, this puts them at
+     the far-right of the transparent area; when the window matches
+     phone aspect, they sit just inside the right edge of the shell. */
   position: absolute;
   top: 50%;
-  left: 100%;
-  margin-left: 14px;
+  right: 14px;
   transform: translateY(-50%) translateX(8px);
   display: flex;
   flex-direction: column;

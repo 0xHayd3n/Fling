@@ -16,12 +16,11 @@ import { SideControls } from "./components/SideControls";
 import { CornerResize } from "./components/CornerResize";
 import { SettingsIcon, FolderIcon } from "./components/Icons";
 
-// Hover band around the right edge of the shell: how far inside (px) and how
-// far outside (px) count as "right-side hover." The outside number must cover
-// the SideControls column position + width with some margin so the mouse can
-// rest on the buttons themselves without losing hover state.
-const RIGHT_HOVER_BAND_INSIDE = 60;
-const RIGHT_HOVER_BAND_OUTSIDE = 100;
+// Pixels from the canvasFrame's right edge that count as "right-side hover."
+// Must comfortably contain the SideControls column (right: 14px + button
+// width 44px = 58px) with margin so the mouse can rest on the buttons
+// themselves without losing hover state.
+const RIGHT_HOVER_BAND = 120;
 
 function Body() {
   const { state } = useFling();
@@ -29,11 +28,8 @@ function Body() {
   // Tracks the serial we've already auto-started for. Reset when no ready
   // device is present so disconnect → reconnect re-triggers auto-mirror.
   const autoStartedSerialRef = useRef<string | null>(null);
-  // Ref to the shell wrap so onMouseMove on canvasFrame can compute distance
-  // from the shell's right edge.
-  const shellWrapRef = useRef<HTMLDivElement>(null);
   // Right-side hover state — drives the fade-in of SideControls. True when
-  // the pointer is within the band straddling the shell's right edge.
+  // the pointer is within RIGHT_HOVER_BAND px of the canvasFrame's right edge.
   const [rightHover, setRightHover] = useState(false);
   // Keep canvas mounted during stopping/starting so the user doesn't see the
   // StateHero flash through. Only "off" and "error" go to the hero.
@@ -80,19 +76,14 @@ function Body() {
       <div
         className={styles.canvasFrame}
         onMouseMove={(e) => {
-          const wrap = shellWrapRef.current;
-          if (!wrap) return;
-          const rect = wrap.getBoundingClientRect();
-          const dxRight = e.clientX - rect.right;
-          const inX = dxRight >= -RIGHT_HOVER_BAND_INSIDE && dxRight <= RIGHT_HOVER_BAND_OUTSIDE;
-          const inY = e.clientY >= rect.top && e.clientY <= rect.bottom;
-          const shouldShow = inX && inY;
+          const rect = e.currentTarget.getBoundingClientRect();
+          const fromRight = rect.right - e.clientX;
+          const shouldShow = fromRight >= 0 && fromRight < RIGHT_HOVER_BAND;
           if (shouldShow !== rightHover) setRightHover(shouldShow);
         }}
         onMouseLeave={() => { if (rightHover) setRightHover(false); }}
       >
         <div
-          ref={shellWrapRef}
           className={styles.shellWrap}
           style={
             state.mirror.width && state.mirror.height
@@ -103,9 +94,9 @@ function Body() {
           <div className={styles.canvas}>
             {mirroring ? <MirrorCanvas /> : <StateHero />}
           </div>
-          {mirroring && <SideControls visible={rightHover} />}
           <CornerResize />
         </div>
+        {mirroring && <SideControls visible={rightHover} />}
       </div>
       <DevicePickerPopover />
       <OpacityPopover />
