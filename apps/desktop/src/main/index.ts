@@ -67,8 +67,7 @@ app.on("before-quit", (e) => {
   e.preventDefault();
   const cleanup = (async () => {
     watcher?.stop();
-    const active = scrcpy?.active() ?? [];
-    await Promise.allSettled(active.map((s) => s.stop()));
+    await scrcpy?.shutdown();
   })();
   const timeout = new Promise<void>((resolve) => setTimeout(resolve, 3000));
   void Promise.race([cleanup, timeout]).then(() => app.exit(0));

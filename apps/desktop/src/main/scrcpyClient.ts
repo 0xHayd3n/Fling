@@ -29,6 +29,10 @@ export interface ScrcpyManager extends EventEmitter {
   stop(mirrorId: string): Promise<void>;
   send(mirrorId: string, bytes: Uint8Array): void;
   active(): ScrcpySession[];
+  // Stops every active session, awaits all cleanups, then sweeps any
+  // leftover adb forward rules. Safe to call multiple times; idempotent.
+  // Used by the main process's before-quit handler.
+  shutdown(): Promise<void>;
 }
 
 export function createScrcpyManager(): ScrcpyManager {
@@ -330,5 +334,22 @@ export function createScrcpyManager(): ScrcpyManager {
   };
 
   emitter.active = () => Array.from(sessions.values());
+
+  let shutdownPromise: Promise<void> | null = null;
+  emitter.shutdown = () => {
+    if (shutdownPromise) return shutdownPromise;
+    shutdownPromise = (async () => {
+      const active = Array.from(sessions.values());
+      // allSettled — one stuck session shouldn't block the rest.
+      await Promise.allSettled(active.map((s) => s.stop()));
+      sessions.clear();
+      // Defence in depth: the per-session stop() does adbUnforward(localPort),
+      // but if any rules survived (e.g. an aborted start that never reached
+      // sessions.set), this sweeps them.
+      await adbUnforwardAll();
+    })();
+    return shutdownPromise;
+  };
+
   return emitter;
 }
