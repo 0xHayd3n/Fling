@@ -10,6 +10,8 @@ import { StateHero } from "./components/StateHero";
 import { MirrorButton } from "./components/MirrorButton";
 import { MirrorCanvas } from "./components/MirrorCanvas";
 import { DevicePickerPopover } from "./components/DevicePickerPopover";
+import { PinButton } from "./components/PinButton";
+import { OpacityPopover } from "./components/OpacityPopover";
 import { SettingsIcon, FolderIcon } from "./components/Icons";
 
 function Body() {
@@ -54,6 +56,7 @@ function Body() {
               <FolderIcon />
             </ToolbarButton>
             <MirrorButton />
+            <PinButton />
           </>
         }
         right={<WindowControls />}
@@ -63,6 +66,7 @@ function Body() {
         {mirroring ? <MirrorCanvas /> : <StateHero />}
       </div>
       <DevicePickerPopover />
+      <OpacityPopover />
     </>
   );
 }
