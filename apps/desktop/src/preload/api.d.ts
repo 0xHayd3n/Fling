@@ -4,7 +4,7 @@ import type {
   DeployStartedEvt, DeployDoneEvt,
   MirrorStartReq, MirrorStartRes, MirrorStopReq, MirrorInputReq,
   MirrorFrameEvt, MirrorResizeEvt, MirrorEndedEvt,
-  PairingStartReq, FlingConfig, DevicesChangedEvt, AdbProbeEvt,
+  PairingStartQrRes, PairingStartWithCodeReq, PairingStatusEvt, FlingConfig, DevicesChangedEvt, AdbProbeEvt,
   WindowBounds,
 } from "../main/ipc/channels";
 import type { Device } from "@eleutex/fling/devices";
@@ -25,7 +25,11 @@ export interface FlingApi {
     stop: (req: MirrorStopReq) => Promise<{}>;
     input: (req: MirrorInputReq) => Promise<void>;
   };
-  pairing: { start: (req: PairingStartReq) => Promise<{ paired: true }>; };
+  pairing: {
+    startQr: () => Promise<PairingStartQrRes>;
+    startWithCode: (req: PairingStartWithCodeReq) => Promise<{ ok: true }>;
+    cancel: () => Promise<void>;
+  };
   config: {
     read: () => Promise<FlingConfig>;
     write: (patch: Partial<FlingConfig>) => Promise<{ written: true }>;
@@ -47,6 +51,7 @@ export interface FlingApi {
     mirrorFrame: (cb: (e: MirrorFrameEvt) => void) => () => void;
     mirrorResize: (cb: (e: MirrorResizeEvt) => void) => () => void;
     mirrorEnded: (cb: (e: MirrorEndedEvt) => void) => () => void;
+    pairingStatus: (cb: (e: PairingStatusEvt) => void) => () => void;
   };
 }
 

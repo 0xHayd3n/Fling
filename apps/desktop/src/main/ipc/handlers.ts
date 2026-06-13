@@ -1,5 +1,5 @@
 import { ipcMain, screen, type BrowserWindow } from "electron";
-import { Channels, type FlingConfig, type MirrorInputReq, type MirrorStartReq, type MirrorStopReq } from "./channels";
+import { Channels, type FlingConfig, type MirrorInputReq, type MirrorStartReq, type MirrorStopReq, type PairingStatus, type PairingStartWithCodeReq } from "./channels";
 import type { DeviceWatcher } from "../deviceWatcher";
 import { listDevices } from "@eleutex/fling/devices";
 import type { ScrcpyManager } from "../scrcpyClient";
@@ -99,7 +99,61 @@ export function registerIpcHandlers(opts: {
     }
   });
 
-  ipcMain.handle(Channels.pairingStart, async () => ({ paired: true }));
+  // QR pairing — one active session at a time. Tracked here so cancel()
+  // can abort an in-flight discover loop without leaking adb subprocesses.
+  let currentPairing: { ac: AbortController; done: Promise<unknown> } | null = null;
+
+  const sendStatus = (s: PairingStatus) => {
+    opts.getWindow()?.webContents.send(Channels.pairingStatus, { status: s });
+  };
+
+  ipcMain.handle(Channels.pairingStartQr, async () => {
+    const { startPairQr } = await import("@eleutex/fling/pairing");
+    if (currentPairing) {
+      currentPairing.ac.abort();
+      currentPairing = null;
+    }
+    const ac = new AbortController();
+    const r = startPairQr({ onStatus: sendStatus, signal: ac.signal });
+    currentPairing = { ac, done: r.done };
+    void r.done.then(async (terminal: PairingStatus) => {
+      if (terminal.kind === "success") {
+        await rememberPairedDevice(terminal.serial, terminal.model);
+      }
+      currentPairing = null;
+    });
+    return { qrText: r.qrText, serviceName: r.serviceName };
+  });
+
+  ipcMain.handle(Channels.pairingStartWithCode, async (_e, req: PairingStartWithCodeReq) => {
+    const { pairWithCode } = await import("@eleutex/fling/pairing");
+    if (currentPairing) {
+      currentPairing.ac.abort();
+      currentPairing = null;
+    }
+    const ac = new AbortController();
+    const done = pairWithCode({ host: req.host, port: req.port, code: req.code, onStatus: sendStatus, signal: ac.signal });
+    currentPairing = { ac, done };
+    void done.then(async (terminal: PairingStatus) => {
+      if (terminal.kind === "success") {
+        await rememberPairedDevice(terminal.serial, terminal.model);
+      }
+      currentPairing = null;
+    });
+    return { ok: true as const };
+  });
+
+  ipcMain.handle(Channels.pairingCancel, async () => {
+    if (currentPairing) {
+      currentPairing.ac.abort();
+      currentPairing = null;
+    }
+  });
+
+  async function rememberPairedDevice(serial: string, model: string): Promise<void> {
+    // Persistence is wired up in a later task; for now this is a no-op.
+    // Marker: KNOWN_DEVICES_PERSIST_HOOK
+  }
   ipcMain.handle(Channels.configRead, async () => DEFAULT_CONFIG);
   ipcMain.handle(Channels.configWrite, async () => ({ written: true }));
 

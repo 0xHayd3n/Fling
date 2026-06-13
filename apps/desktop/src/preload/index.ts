@@ -24,7 +24,11 @@ contextBridge.exposeInMainWorld("fling", {
     stop: (req: unknown) => ipcRenderer.invoke(Channels.mirrorStop, req),
     input: (req: unknown) => ipcRenderer.invoke(Channels.mirrorInput, req),
   },
-  pairing: { start: (req: unknown) => ipcRenderer.invoke(Channels.pairingStart, req) },
+  pairing: {
+    startQr: () => ipcRenderer.invoke(Channels.pairingStartQr),
+    startWithCode: (req: unknown) => ipcRenderer.invoke(Channels.pairingStartWithCode, req),
+    cancel: () => ipcRenderer.invoke(Channels.pairingCancel),
+  },
   config: {
     read: () => ipcRenderer.invoke(Channels.configRead),
     write: (patch: unknown) => ipcRenderer.invoke(Channels.configWrite, patch),
@@ -46,5 +50,6 @@ contextBridge.exposeInMainWorld("fling", {
     mirrorFrame: (cb: Listener) => onChannel(Channels.mirrorFrame, cb),
     mirrorResize: (cb: Listener) => onChannel(Channels.mirrorResize, cb),
     mirrorEnded: (cb: Listener) => onChannel(Channels.mirrorEnded, cb),
+    pairingStatus: (cb: Listener) => onChannel(Channels.pairingStatus, cb),
   },
 });

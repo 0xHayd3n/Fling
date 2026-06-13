@@ -10,7 +10,9 @@ export const Channels = {
   mirrorStart: "fling.mirror.start",
   mirrorStop: "fling.mirror.stop",
   mirrorInput: "fling.mirror.input",
-  pairingStart: "fling.pairing.start",
+  pairingStartQr: "fling.pairing.startQr",
+  pairingStartWithCode: "fling.pairing.startWithCode",
+  pairingCancel: "fling.pairing.cancel",
   configRead: "fling.config.read",
   configWrite: "fling.config.write",
   windowMinimize: "fling.window.minimize",
@@ -21,6 +23,7 @@ export const Channels = {
   windowGetBounds: "fling.window.getBounds",
   windowSetBounds: "fling.window.setBounds",
   // Main → renderer (send)
+  pairingStatus: "fling.pairing.status",
   devicesChanged: "fling.devices.changed",
   adbProbe: "fling.adb.probe",
   deployStarted: "fling.deploy.started",
@@ -66,7 +69,18 @@ export interface MirrorFrameEvt { mirrorId: string; nal: Uint8Array; pts: number
 export interface MirrorResizeEvt { mirrorId: string; width: number; height: number; }
 export interface MirrorEndedEvt { mirrorId: string; reason: string; }
 
-export interface PairingStartReq { host: string; port: number; code: string; }
+export interface PairingStartQrRes { qrText: string; serviceName: string; }
+export interface PairingStartWithCodeReq { host: string; port: number; code: string; }
+
+export type PairingStatus =
+  | { kind: "waiting" }
+  | { kind: "pairing" }
+  | { kind: "connecting" }
+  | { kind: "success"; serial: string; model: string }
+  | { kind: "error"; reason: string; rawAdbError?: string }
+  | { kind: "timeout" };
+
+export interface PairingStatusEvt { status: PairingStatus; }
 
 export interface FlingConfig {
   version: 1;
