@@ -33,6 +33,8 @@ contextBridge.exposeInMainWorld("fling", {
     minimize: () => ipcRenderer.invoke(Channels.windowMinimize),
     maximize: () => ipcRenderer.invoke(Channels.windowMaximize),
     close: () => ipcRenderer.invoke(Channels.windowClose),
+    setAlwaysOnTop: (pinned: boolean) => ipcRenderer.invoke(Channels.windowSetAlwaysOnTop, pinned),
+    setOpacity: (opacity: number) => ipcRenderer.invoke(Channels.windowSetOpacity, opacity),
   },
   on: {
     devicesChanged: (cb: Listener) => onChannel(Channels.devicesChanged, cb),

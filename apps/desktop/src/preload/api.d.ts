@@ -29,7 +29,13 @@ export interface FlingApi {
     read: () => Promise<FlingConfig>;
     write: (patch: Partial<FlingConfig>) => Promise<{ written: true }>;
   };
-  window: { minimize: () => Promise<void>; maximize: () => Promise<void>; close: () => Promise<void>; };
+  window: {
+    minimize: () => Promise<void>;
+    maximize: () => Promise<void>;
+    close: () => Promise<void>;
+    setAlwaysOnTop: (pinned: boolean) => Promise<void>;
+    setOpacity: (opacity: number) => Promise<void>;
+  };
   on: {
     devicesChanged: (cb: (e: DevicesChangedEvt) => void) => () => void;
     adbProbe: (cb: (e: AdbProbeEvt) => void) => () => void;
