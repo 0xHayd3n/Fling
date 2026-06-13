@@ -16,11 +16,14 @@ import { SideControls } from "./components/SideControls";
 import { CornerResize } from "./components/CornerResize";
 import { SettingsIcon, FolderIcon } from "./components/Icons";
 
-// Pixels from the canvasFrame's right edge that count as "right-side hover."
-// Must comfortably contain the SideControls column (right: 14px + button
-// width 44px = 58px) with margin so the mouse can rest on the buttons
-// themselves without losing hover state.
-const RIGHT_HOVER_BAND = 120;
+// Pixels from the window's right edge that count as "right-side hover."
+// Must comfortably contain the SideControls column (sideArea width 72px +
+// some margin so the mouse can rest on the buttons without losing hover).
+const RIGHT_HOVER_BAND = 140;
+// Pixels from the top of the window that the hover band starts. Excludes
+// the toolbar / WindowControls area so hovering the close button doesn't
+// trigger SideControls.
+const TOP_HOVER_EXCLUDE = 80;
 
 function Body() {
   const { state } = useFling();
@@ -29,13 +32,29 @@ function Body() {
   // device is present so disconnect → reconnect re-triggers auto-mirror.
   const autoStartedSerialRef = useRef<string | null>(null);
   // Right-side hover state — drives the fade-in of SideControls. True when
-  // the pointer is within RIGHT_HOVER_BAND px of the canvasFrame's right edge.
+  // the pointer is within RIGHT_HOVER_BAND px of the window's right edge
+  // AND below the toolbar.
   const [rightHover, setRightHover] = useState(false);
   // Keep canvas mounted during stopping/starting so the user doesn't see the
   // StateHero flash through. Only "off" and "error" go to the hero.
   const mirroring = state.mirror.status === "running"
     || state.mirror.status === "starting"
     || state.mirror.status === "stopping";
+
+  // Document-level mousemove for right-edge hover. Window-relative (not
+  // canvasFrame-relative) because SideControls now lives in a parallel
+  // sideArea column whose right edge IS the window's right padding edge.
+  // Only active while mirroring so we don't pay for the listener at idle.
+  useEffect(() => {
+    if (!mirroring) return;
+    const onMove = (e: MouseEvent) => {
+      const fromRight = window.innerWidth - e.clientX;
+      const inBand = fromRight >= 0 && fromRight < RIGHT_HOVER_BAND && e.clientY > TOP_HOVER_EXCLUDE;
+      setRightHover((prev) => (prev === inBand ? prev : inBand));
+    };
+    document.addEventListener("mousemove", onMove);
+    return () => document.removeEventListener("mousemove", onMove);
+  }, [mirroring]);
 
   // Auto-mirror on launch: when a single ready device appears, start the
   // mirror automatically — but only once per device-appearance, not once
@@ -57,45 +76,40 @@ function Body() {
 
   return (
     <>
-      <Toolbar
-        left={
-          <>
-            <ToolbarButton disabled title="Settings" aria-label="Settings">
-              <SettingsIcon />
-            </ToolbarButton>
-            <ToolbarButton disabled title="Open Project" aria-label="Open Project">
-              <FolderIcon />
-            </ToolbarButton>
-            <MirrorButton />
-            <PinButton />
-          </>
-        }
-        right={<WindowControls />}
-        bottom={<ConnectionIndicator />}
-      />
-      <div
-        className={styles.canvasFrame}
-        onMouseMove={(e) => {
-          const rect = e.currentTarget.getBoundingClientRect();
-          const fromRight = rect.right - e.clientX;
-          const shouldShow = fromRight >= 0 && fromRight < RIGHT_HOVER_BAND;
-          if (shouldShow !== rightHover) setRightHover(shouldShow);
-        }}
-        onMouseLeave={() => { if (rightHover) setRightHover(false); }}
-      >
-        <div
-          className={styles.shellWrap}
-          style={
-            state.mirror.width && state.mirror.height
-              ? ({ "--phone-aspect": `${state.mirror.width} / ${state.mirror.height}` } as React.CSSProperties)
-              : undefined
+      <div className={styles.mainArea}>
+        <Toolbar
+          left={
+            <>
+              <ToolbarButton disabled title="Settings" aria-label="Settings">
+                <SettingsIcon />
+              </ToolbarButton>
+              <ToolbarButton disabled title="Open Project" aria-label="Open Project">
+                <FolderIcon />
+              </ToolbarButton>
+              <MirrorButton />
+              <PinButton />
+            </>
           }
-        >
-          <div className={styles.canvas}>
-            {mirroring ? <MirrorCanvas /> : <StateHero />}
+          right={<WindowControls />}
+          bottom={<ConnectionIndicator />}
+        />
+        <div className={styles.canvasFrame}>
+          <div
+            className={styles.shellWrap}
+            style={
+              state.mirror.width && state.mirror.height
+                ? ({ "--phone-aspect": `${state.mirror.width} / ${state.mirror.height}` } as React.CSSProperties)
+                : undefined
+            }
+          >
+            <div className={styles.canvas}>
+              {mirroring ? <MirrorCanvas /> : <StateHero />}
+            </div>
+            <CornerResize />
           </div>
-          <CornerResize />
         </div>
+      </div>
+      <div className={styles.sideArea}>
         {mirroring && <SideControls visible={rightHover} />}
       </div>
       <DevicePickerPopover />

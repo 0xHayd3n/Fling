@@ -1,2 +1,15 @@
 .btn { /* inherits ToolbarButton */ }
 .chev { display: inline-flex; opacity: 0.55; }
+
+.icon {
+  display: inline-flex;
+}
+.iconSpinning {
+  display: inline-flex;
+  animation: spin 1s linear infinite;
+  transform-origin: 50% 50%;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

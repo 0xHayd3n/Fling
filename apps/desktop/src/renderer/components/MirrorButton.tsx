@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { useFling } from "../state/FlingContext";
 import { useMirrorControl } from "../state/useMirrorControl";
 import { ToolbarButton } from "./ToolbarButton";
-import { PhoneIcon, ChevronDownIcon } from "./Icons";
+import { RefreshIcon, ChevronDownIcon } from "./Icons";
 import styles from "./MirrorButton.module.css";
 
 const LONG_PRESS_MS = 300;
@@ -56,7 +56,9 @@ export function MirrorButton() {
       title="Mirror (right-click for device list)"
       aria-label="Mirror"
     >
-      <PhoneIcon />
+      <span className={inTransition ? styles.iconSpinning : styles.icon}>
+        <RefreshIcon />
+      </span>
       <span className={styles.chev}><ChevronDownIcon /></span>
     </ToolbarButton>
   );

@@ -42,10 +42,9 @@ export function registerIpcHandlers(opts: {
   const TOOLBAR_CANVAS_GAP = 8;
   const TOOLBAR_MIN_WIDTH = 320;
   const TARGET_WINDOW_HEIGHT = 800;
-  // Reserved transparent space to the right of the shell where SideControls
-  // float. Matches canvasFrame's right padding minus left padding so the
-  // shell stays the size it would otherwise be at this window width.
-  const SIDE_CONTROLS_RESERVE = 68;
+  // Reserved transparent column to the right of the shell where SideControls
+  // float. Matches the sideArea width in App.module.css.
+  const SIDE_CONTROLS_RESERVE = 72;
   const EXTRA_W = APP_PADDING * 2 + SIDE_CONTROLS_RESERVE;
   const EXTRA_H = APP_PADDING * 2 + TOOLBAR_HEIGHT + TOOLBAR_CANVAS_GAP;
 

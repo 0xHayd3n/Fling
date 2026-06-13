@@ -1,10 +1,10 @@
 .column {
-  /* Anchored to canvasFrame's right edge in the reserved right-padding
-     area, so buttons sit outside the shell. Vertical position 30% puts
-     the column in the upper half — matching where physical volume and
-     power keys live on real phones rather than at vertical centre. */
+  /* Anchored inside the sideArea column (which sits to the right of the
+     toolbar+shell column). top: 38% lands the column roughly at upper-
+     third of the shell — matching where physical volume and power keys
+     live on real phones rather than at vertical centre. */
   position: absolute;
-  top: 30%;
+  top: 38%;
   right: 14px;
   transform: translateY(-50%) translateX(8px);
   display: flex;

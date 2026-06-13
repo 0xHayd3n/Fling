@@ -1,29 +1,43 @@
 .app {
+  /* Two columns side-by-side: mainArea (Toolbar + canvasFrame stacked
+     vertically) on the left, sideArea (SideControls reserve) on the
+     right. This keeps the Toolbar the same width as the shell — they
+     share mainArea's width — while the SideControls live in their own
+     dedicated column outside that width. */
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   height: 100vh;
   padding: 8px;
-  gap: 8px;
   background: transparent;
   box-sizing: border-box;
+}
+.mainArea {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sideArea {
+  width: 72px;
+  flex-shrink: 0;
+  position: relative;
+  /* Empty area is click-through; SideControls' visible buttons re-enable
+     pointer-events on themselves. */
+  pointer-events: none;
 }
 .canvasFrame {
   flex: 1;
   min-height: 0;
-  /* Right padding reserves outside-the-shell space for SideControls so
-     they appear in the transparent area beyond the shell's right edge,
-     not on top of the shell. ~72px = right offset (14) + button (44) +
-     left margin (14). Vertical padding gives the shell's drop shadow
-     room to render without being clipped by the window edge. */
-  padding: 16px 72px 24px 4px;
+  /* Vertical padding gives the shell's drop shadow room to render
+     without being clipped by the window edge. No horizontal padding —
+     the shell fills the column edge-to-edge, matching the Toolbar. */
+  padding: 16px 0 24px 0;
   display: flex;
   align-items: center;
   justify-content: center;
   background: transparent;
   box-sizing: border-box;
-  /* SideControls is an absolutely-positioned sibling of shellWrap inside
-     this frame, so we need a positioning context for its right-anchor. */
-  position: relative;
 }
 .shellWrap {
   /* Aspect-locked invisible wrapper. The shell itself fills this wrapper
