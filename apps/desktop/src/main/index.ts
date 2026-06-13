@@ -52,8 +52,23 @@ app.whenReady().then(() => {
   watcher.start();
 });
 app.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });
-app.on("before-quit", async () => {
-  watcher?.stop();
-  for (const s of scrcpy?.active() ?? []) await s.stop();
+
+// Electron doesn't await async `before-quit` handlers — it quits the moment the
+// synchronous part returns. To actually wait for scrcpy processes to die we have
+// to preventDefault, run cleanup, then app.exit(). A hard timeout guards against
+// hung sessions blocking quit forever.
+let quitting = false;
+app.on("before-quit", (e) => {
+  if (quitting) return;
+  quitting = true;
+  e.preventDefault();
+  const cleanup = (async () => {
+    watcher?.stop();
+    const active = scrcpy?.active() ?? [];
+    await Promise.allSettled(active.map((s) => s.stop()));
+  })();
+  const timeout = new Promise<void>((resolve) => setTimeout(resolve, 3000));
+  void Promise.race([cleanup, timeout]).then(() => app.exit(0));
 });
+
 app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
