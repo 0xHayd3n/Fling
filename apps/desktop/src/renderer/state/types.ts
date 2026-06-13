@@ -12,7 +12,13 @@ export interface AppState {
     deviceId: string | null;
     width: number;
     height: number;
-    status: "off" | "starting" | "running";
+    // off:        no session
+    // starting:   IPC mirror.start is in flight
+    // running:    session active, frames decoding
+    // stopping:   user requested stop, awaiting cleanup
+    // error:      session ended unexpectedly; errorReason holds the cause
+    status: "off" | "starting" | "running" | "stopping" | "error";
+    errorReason: string | null;
     configNal: Uint8Array | null;
     firstKeyNal: Uint8Array | null;
     firstKeyPts: number;
@@ -37,7 +43,7 @@ export const INITIAL_STATE: AppState = {
   devices: [],
   selectedDeviceId: null,
   adbOk: true,
-  mirror: { mirrorId: null, deviceId: null, width: 0, height: 0, status: "off", configNal: null, firstKeyNal: null, firstKeyPts: 0 },
+  mirror: { mirrorId: null, deviceId: null, width: 0, height: 0, status: "off", errorReason: null, configNal: null, firstKeyNal: null, firstKeyPts: 0 },
   deploy: { runId: null, status: "idle", toastId: null },
   toasts: [],
   modals: { devicePicker: false, recentProjects: false, settings: false, pairing: false },

@@ -4,12 +4,25 @@ import styles from "./StateHero.module.css";
 export function StateHero() {
   const { state } = useFling();
   const ready = state.devices.find((d) => d.state === "device");
-  if (ready) return null;
   const unauthorized = state.devices.find((d) => d.state === "unauthorized");
   const offline = state.devices.find((d) => d.state === "offline");
 
+  // Mirror just ended unexpectedly — show why instead of the idle hero so
+  // the user understands the canvas vanished (not just "nothing happened").
+  // Wins over the ready/unauthorized/offline checks because the error
+  // happened to THIS session and is more relevant right now.
   let inner;
-  if (!state.adbOk) {
+  if (state.mirror.status === "error") {
+    inner = (
+      <>
+        <h2>Mirror disconnected</h2>
+        <p>{state.mirror.errorReason ?? "Unknown reason"}</p>
+        <p className={styles.fine}>{ready ? "Reconnecting…" : "Plug the device back in."}</p>
+      </>
+    );
+  } else if (ready) {
+    return null;
+  } else if (!state.adbOk) {
     inner = (
       <>
         <h2>ADB not found</h2>

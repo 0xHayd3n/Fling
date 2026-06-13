@@ -17,13 +17,18 @@ function Body() {
   // device is present so disconnect → reconnect re-triggers auto-mirror.
   // (A boolean ref never reset would suppress recovery forever.)
   const autoStartedSerialRef = useRef<string | null>(null);
-  const mirroring = state.mirror.status === "running" || state.mirror.status === "starting";
+  // Keep canvas mounted during stopping/starting so the user doesn't see the
+  // StateHero flash through. Only "off" and "error" go to the hero.
+  const mirroring = state.mirror.status === "running"
+    || state.mirror.status === "starting"
+    || state.mirror.status === "stopping";
 
   // Auto-mirror on launch: when a single ready device appears, start the
   // mirror automatically — but only once per device-appearance, not once
-  // per app lifetime.
+  // per app lifetime. Eligible from "off" and "error" (so device reconnect
+  // after a crash auto-recovers); the serial ref prevents retry loops.
   useEffect(() => {
-    if (state.mirror.status !== "off") return;
+    if (state.mirror.status !== "off" && state.mirror.status !== "error") return;
     const ready = state.devices.filter((d) => d.state === "device");
     if (ready.length === 0) {
       autoStartedSerialRef.current = null;

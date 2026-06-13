@@ -14,6 +14,7 @@ export type Action =
   | { type: "SET_RECENT_PROJECTS"; recent: RecentProject[] }
   | { type: "MIRROR_STARTING"; deviceId: string }
   | { type: "MIRROR_STARTED"; res: MirrorStartRes; deviceId: string }
+  | { type: "MIRROR_STOPPING" }
   | { type: "MIRROR_STOPPED" }
   | { type: "MIRROR_RESIZED"; evt: MirrorResizeEvt }
   | { type: "MIRROR_ENDED"; evt: MirrorEndedEvt }
@@ -38,7 +39,7 @@ export function reducer(state: AppState, action: Action): AppState {
     case "SET_RECENT_PROJECTS":
       return { ...state, recentProjects: action.recent };
     case "MIRROR_STARTING":
-      return { ...state, mirror: { ...state.mirror, status: "starting", deviceId: action.deviceId } };
+      return { ...state, mirror: { ...state.mirror, status: "starting", deviceId: action.deviceId, errorReason: null } };
     case "MIRROR_STARTED":
       return {
         ...state,
@@ -48,13 +49,18 @@ export function reducer(state: AppState, action: Action): AppState {
           width: action.res.width,
           height: action.res.height,
           status: "running",
+          errorReason: null,
           configNal: new Uint8Array(action.res.configNal),
           firstKeyNal: new Uint8Array(action.res.firstKeyNal),
           firstKeyPts: action.res.firstKeyPts,
         },
       };
+    case "MIRROR_STOPPING":
+      // User-initiated stop in flight. Keep mirrorId so the stop IPC can
+      // reference it; the followup MIRROR_STOPPED clears everything.
+      return { ...state, mirror: { ...state.mirror, status: "stopping" } };
     case "MIRROR_STOPPED":
-      return { ...state, mirror: { mirrorId: null, deviceId: null, width: 0, height: 0, status: "off", configNal: null, firstKeyNal: null, firstKeyPts: 0 } };
+      return { ...state, mirror: { mirrorId: null, deviceId: null, width: 0, height: 0, status: "off", errorReason: null, configNal: null, firstKeyNal: null, firstKeyPts: 0 } };
     case "MIRROR_RESIZED":
       // Ignore resize events outside a running session. A late event arriving
       // while status is "starting" would leave mirrorId/configNal null but
@@ -63,7 +69,18 @@ export function reducer(state: AppState, action: Action): AppState {
       if (action.evt.mirrorId !== state.mirror.mirrorId) return state;
       return { ...state, mirror: { ...state.mirror, width: action.evt.width, height: action.evt.height } };
     case "MIRROR_ENDED":
-      return { ...state, mirror: { mirrorId: null, deviceId: null, width: 0, height: 0, status: "off", configNal: null, firstKeyNal: null, firstKeyPts: 0 } };
+      // Unexpected end (socket close, server crash). Distinct from
+      // MIRROR_STOPPED — the user did NOT request this. Surfaces reason so
+      // StateHero can show a meaningful message instead of the idle hero.
+      return {
+        ...state,
+        mirror: {
+          mirrorId: null, deviceId: null, width: 0, height: 0,
+          status: "error",
+          errorReason: action.evt.reason,
+          configNal: null, firstKeyNal: null, firstKeyPts: 0,
+        },
+      };
     case "DEPLOY_STARTED":
       return { ...state, deploy: { runId: action.evt.runId, status: "running", toastId: action.toastId } };
     case "DEPLOY_DONE":

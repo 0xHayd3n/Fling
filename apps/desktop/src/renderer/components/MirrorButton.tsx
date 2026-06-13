@@ -13,7 +13,11 @@ export function MirrorButton() {
 
   const ready = state.devices.filter((d) => d.state === "device");
   const canMirror = ready.length > 0;
-  const isOn = state.mirror.status !== "off";
+  const status = state.mirror.status;
+  // "On" = the button shows Stop. Only when there is an active session to
+  // stop. Transitional states (starting/stopping) show but are disabled.
+  const isOn = status === "running";
+  const inTransition = status === "starting" || status === "stopping";
 
   const resolveDeviceId = (): string | null => {
     if (state.selectedDeviceId) return state.selectedDeviceId;
@@ -35,8 +39,16 @@ export function MirrorButton() {
   };
   const stopMirror = async () => {
     if (!state.mirror.mirrorId) return;
-    await window.fling.mirror.stop({ mirrorId: state.mirror.mirrorId });
-    dispatch({ type: "MIRROR_STOPPED" });
+    dispatch({ type: "MIRROR_STOPPING" });
+    try {
+      await window.fling.mirror.stop({ mirrorId: state.mirror.mirrorId });
+    } catch (err) {
+      console.error("[mirror.stop]", err);
+    } finally {
+      // Always land in "off" even if stop IPC threw — otherwise the UI is
+      // stuck in "stopping" with no recovery path.
+      dispatch({ type: "MIRROR_STOPPED" });
+    }
   };
 
   const onClick = () => {
@@ -47,7 +59,7 @@ export function MirrorButton() {
   return (
     <ToolbarButton
       className={styles.btn}
-      disabled={!canMirror && !isOn}
+      disabled={inTransition || (!canMirror && !isOn)}
       onClick={onClick}
       onContextMenu={(e) => { e.preventDefault(); dispatch({ type: "MODAL_OPEN", modal: "devicePicker" }); }}
       onPointerDown={() => {

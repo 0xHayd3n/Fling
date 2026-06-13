@@ -41,6 +41,47 @@ describe("reducer", () => {
     assert.equal(next.toasts[0].message, "y");
   });
 
+  it("MIRROR_STOPPING transitions running → stopping", () => {
+    const running = reducer(INITIAL_STATE, { type: "MIRROR_STARTING", deviceId: "d" });
+    const started = reducer(running, {
+      type: "MIRROR_STARTED",
+      deviceId: "d",
+      res: { mirrorId: "m1", width: 1, height: 1, configNal: new ArrayBuffer(0), firstKeyNal: new ArrayBuffer(0), firstKeyPts: 0 },
+    });
+    const stopping = reducer(started, { type: "MIRROR_STOPPING" });
+    assert.equal(stopping.mirror.status, "stopping");
+    assert.equal(stopping.mirror.mirrorId, "m1", "mirrorId preserved so stop IPC can target it");
+  });
+
+  it("MIRROR_ENDED with reason transitions to error status with reason", () => {
+    const running = reducer(INITIAL_STATE, { type: "MIRROR_STARTING", deviceId: "d" });
+    const started = reducer(running, {
+      type: "MIRROR_STARTED",
+      deviceId: "d",
+      res: { mirrorId: "m1", width: 1, height: 1, configNal: new ArrayBuffer(0), firstKeyNal: new ArrayBuffer(0), firstKeyPts: 0 },
+    });
+    const ended = reducer(started, { type: "MIRROR_ENDED", evt: { mirrorId: "m1", reason: "video-socket-closed" } });
+    assert.equal(ended.mirror.status, "error");
+    assert.equal(ended.mirror.errorReason, "video-socket-closed");
+  });
+
+  it("MIRROR_STOPPED clears status and errorReason from error state", () => {
+    const errored = {
+      ...INITIAL_STATE,
+      mirror: { ...INITIAL_STATE.mirror, status: "error", errorReason: "test", mirrorId: "m1" },
+    };
+    const off = reducer(errored, { type: "MIRROR_STOPPED" });
+    assert.equal(off.mirror.status, "off");
+    assert.equal(off.mirror.errorReason, null);
+    assert.equal(off.mirror.mirrorId, null);
+  });
+
+  it("MIRROR_RESIZED is ignored when status is starting", () => {
+    const starting = reducer(INITIAL_STATE, { type: "MIRROR_STARTING", deviceId: "d" });
+    const same = reducer(starting, { type: "MIRROR_RESIZED", evt: { mirrorId: "m1", width: 999, height: 999 } });
+    assert.equal(same.mirror.width, 0, "resize should not mutate non-running state");
+  });
+
   it("DEPLOY_DONE resets deploy slice to idle", () => {
     const started = reducer(INITIAL_STATE, {
       type: "DEPLOY_STARTED",
