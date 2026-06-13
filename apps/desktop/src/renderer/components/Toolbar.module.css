@@ -3,12 +3,29 @@
   flex-direction: column;
   height: 64px;
   box-sizing: border-box;
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+  /* Apple-style "Liquid Glass":
+     1. Heavy backdrop blur + saturation + brightness for refraction feel.
+     2. Top-bright background gradient (specular highlight).
+     3. Layered box-shadow: inset top edge sheen, hairline outline, inset
+        bottom darkening (depth), outer drop shadow (ambient + close).
+     The border is gone — replaced by the inset hairline so it doesn't
+     conflict with the curved edge. */
+  background:
+    linear-gradient(180deg,
+      rgba(255, 255, 255, 0.10) 0%,
+      rgba(255, 255, 255, 0.03) 45%,
+      rgba(255, 255, 255, 0.00) 100%),
+    rgba(20, 22, 28, 0.45);
+  backdrop-filter: blur(40px) saturate(180%) brightness(1.05);
+  -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(1.05);
+  border: none;
+  border-radius: 14px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.18),
+    0 1px 2px rgba(0, 0, 0, 0.15),
+    0 8px 28px rgba(0, 0, 0, 0.28);
   -webkit-app-region: drag;
   user-select: none;
   flex-shrink: 0;

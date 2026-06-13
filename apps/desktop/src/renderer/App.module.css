@@ -10,10 +10,15 @@
 .canvasFrame {
   flex: 1;
   min-height: 0;
+  /* Breathing room for the shell's drop shadow — without this the bottom
+     edge of the shadow gets clipped by the window edge (the app has only
+     8px outer padding, the shadow extends ~40px). */
+  padding: 16px 4px 24px 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: transparent;
+  box-sizing: border-box;
 }
 .canvas {
   /* The phone "shell" — always rendered at device aspect, regardless of
@@ -30,7 +35,12 @@
   position: relative;
   border-radius: 28px;
   background: var(--canvas-bg);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  /* Apple-style layered drop shadow: close+sharp + mid + distant+soft.
+     Less heavy at any single layer than one big blur, looks more natural. */
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.18),
+    0 4px 10px rgba(0, 0, 0, 0.18),
+    0 14px 28px rgba(0, 0, 0, 0.22);
 }
 .projectLabel {
   color: var(--text-tertiary);
