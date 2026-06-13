@@ -130,8 +130,11 @@ export function createScrcpyManager(): ScrcpyManager {
 
   emitter.start = async (deviceId, opts) => {
     const mirrorId = randomUUID();
-    const maxResolution = opts?.maxResolution ?? 1080;
-    const bitrate = opts?.bitrate ?? 4_000_000;
+    // max_size=0 tells scrcpy not to downscale — encode at the device's
+    // native resolution. 12 Mbps is a generous bitrate for portrait phones
+    // at native resolution; over USB this is well within bandwidth.
+    const maxResolution = opts?.maxResolution ?? 0;
+    const bitrate = opts?.bitrate ?? 12_000_000;
     // scrcpy parses `scid` as a Java signed Int32 in radix 16 — max 0x7fffffff.
     // randomUUID slices can land beyond that; force the leading hex digit to 0-7
     // (top bit zero) so the result always fits.

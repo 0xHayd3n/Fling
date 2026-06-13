@@ -52,10 +52,11 @@ export function MirrorCanvas() {
       },
       error: (e) => console.error("[decoder]", e),
     });
-    // Configure for High Profile @ Level 4.0 — covers any 1080p H.264 stream
-    // including Baseline / Main / High since WebCodecs decoders are typically
-    // lenient about accepting lower profiles than configured.
-    decoder.configure({ codec: "avc1.640028", optimizeForLatency: true });
+    // Configure for High Profile @ Level 5.1 — covers up to 4096x2304 so
+    // native-resolution phone streams (e.g. 1080x2400 portrait) fit. WebCodecs
+    // decoders are typically lenient about accepting lower profiles/levels
+    // than configured, so this also handles older 1080p streams.
+    decoder.configure({ codec: "avc1.640033", optimizeForLatency: true });
     decoderRef.current = decoder;
 
     // Prime the decoder with config + first IDR captured before the start
