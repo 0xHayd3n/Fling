@@ -54,4 +54,14 @@ describe("CdpForwards", () => {
     await registry.teardownAll();
     assert.deepEqual(torn, []);
   });
+
+  it("replace works correctly when no prior entry exists (no-op then install)", async () => {
+    const torn = [];
+    await registry.replace(
+      { deviceId: "a", socket: "s", port: 1 },
+      async () => { torn.push(1); }
+    );
+    assert.deepEqual(torn, []);
+    assert.deepEqual(registry.get("a", "s"), { deviceId: "a", socket: "s", port: 1 });
+  });
 });

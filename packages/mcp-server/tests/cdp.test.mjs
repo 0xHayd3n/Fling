@@ -144,4 +144,8 @@ describe("classifyTargetFailure", () => {
   it("returns CDP_NO_TARGETS when prefer=any and nothing matches", () => {
     assert.equal(classifyTargetFailure([], [], "any"), "CDP_NO_TARGETS");
   });
+
+  it("returns CDP_NO_TARGETS for prefer=any when no sockets exist at all", () => {
+    assert.equal(classifyTargetFailure([], [12345], "any"), "CDP_NO_TARGETS");
+  });
 });

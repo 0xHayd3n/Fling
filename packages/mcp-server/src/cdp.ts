@@ -184,7 +184,7 @@ export function classifyTargetFailure(
   packagePids: number[],
   prefer: Prefer
 ): FlingErrorCode {
-  if (prefer === "webview") {
+  if (prefer === "webview" || prefer === "any") {
     const anyChrome = sockets.some((s) => s.kind === "chrome");
     const anyWebview = sockets.some((s) => s.kind === "webview");
     if (!anyWebview && anyChrome) return "CDP_WEBVIEW_NOT_DEBUGGABLE";
@@ -252,7 +252,7 @@ export async function exposeCdp(
 
   const localPort = opts.localPort ?? (await allocateEphemeralPort());
   await setupForward(opts.deviceArgs, localPort, target.name);
-  registry.register(
+  await registry.replace(
     { deviceId: opts.deviceId, socket: target.name, port: localPort },
     () => teardownForward(opts.deviceArgs, localPort)
   );
