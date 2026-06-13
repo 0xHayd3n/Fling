@@ -63,6 +63,19 @@ export function createScrcpyManager(): ScrcpyManager {
     });
   }
 
+  // Defensive cleanup on startup: dev hot-reload, app crashes, and the old
+  // (broken) before-quit handler all leave `adb forward` rules behind. The
+  // next start then fails with "cannot bind listener: Address already in
+  // use". A single --remove-all sweeps the table.
+  async function adbUnforwardAll(): Promise<void> {
+    await new Promise<void>((resolve) => {
+      const f = spawn("adb", ["forward", "--remove-all"]);
+      f.on("exit", () => resolve());
+      f.on("error", () => resolve());
+    });
+  }
+  void adbUnforwardAll();
+
   function startServerOnDevice(deviceId: string, opts: { maxResolution: number; bitrate: number; scId: string }) {
     const args = [
       "-s", deviceId, "shell",
